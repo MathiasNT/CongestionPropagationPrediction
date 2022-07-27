@@ -14,8 +14,8 @@
             "args": [
                 "--scenario",
                 "experiment",
-                "--edge_file",
-                "debug_test.xml"
+                "--edge_filename",
+                "debug_test"
             ]
         },
         {
