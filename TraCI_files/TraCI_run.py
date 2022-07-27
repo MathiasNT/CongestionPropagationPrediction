@@ -3,10 +3,12 @@
 #TODO Check if information comes from all threads
 #TODO Implement naming for results for parallel runs
 #TODO Check if runs are deterministic or if we can change it up
+#TODO Update git ignore file
 
 import os
 import sys
 import argparse
+import glob
 import numpy as np
 from sumolib import checkBinary
 #import traci
@@ -61,7 +63,16 @@ def setup_run(scenario_folder, edge_filename, run_num):
     add_elem.set('value', f'{old_add_files},edgedata_temp{run_num}.add.xml')
     xml_tree.write(config_temp)
 
-    return config_temp
+    sumoCmd = [sumoBinary, "-c", config_temp, "--begin", f"{args.begin}", "--end", f"{args.end}", "--start", "1", "--quit-on-end", "1"]
+    return sumoCmd
+
+def cleanup_temp_files(scenario_folder):
+    sim_folder = f'{scenario_folder}/Simulations/Base'
+    for file in glob.glob(f"{sim_folder}/*temp*"):
+        os.remove(file)
+
+
+
 
 
 # contrains Traci control loop
@@ -124,21 +135,27 @@ if __name__ == "__main__":
     #sumoCmd1 = [sumoBinary, "-c", scenario_path1, "--begin", f"{args.begin}", "--end", f"{args.end}", "--start", "1", "--quit-on-end", "1"]
     #run(sumoCmd=sumoCmd1, start_step=args.begin, end_step=args.end)
     
-    
-    
+    #scenario_paths = []
+    #sumoCmds = []
+    #processes = []
+    #for run_num in range(0, args.run_num):
+
+
     
     
     #Scenario 1
-    scenario_path1 = setup_run(scenario_folder=scenario_folder, edge_filename=f'{args.edge_filename}', run_num=1)
-    sumoCmd1 = [sumoBinary, "-c", scenario_path1, "--begin", f"{args.begin}", "--end", f"{args.end}", "--start", "1", "--quit-on-end", "1"]
+    sumoCmd1 = setup_run(scenario_folder=scenario_folder, edge_filename=f'{args.edge_filename}', run_num=1)
+    print(sumoCmd1)
     p1 = Process(target=run, args=(sumoCmd1, args.begin, args.end))
     
     #Scenario 2 
-    scenario_path2 = setup_run(scenario_folder=scenario_folder, edge_filename=f'{args.edge_filename}', run_num=2)
-    sumoCmd2 = [sumoBinary, "-c", scenario_path2, "--begin", f"{args.begin}", "--end", f"{args.end}", "--start", "1", "--quit-on-end", "1"]
+    sumoCmd2 = setup_run(scenario_folder=scenario_folder, edge_filename=f'{args.edge_filename}', run_num=2)
+    print(sumoCmd2)
     p2 = Process(target=run, args=(sumoCmd2, args.begin, args.end))
 
     p1.start()
     p2.start()
     p1.join()
     p2.join()
+
+    cleanup_temp_files(scenario_folder=scenario_folder)
