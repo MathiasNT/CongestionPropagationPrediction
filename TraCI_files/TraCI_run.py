@@ -84,6 +84,8 @@ def run(sumoCmd, start_step, end_step):
     # 'full block' example with gradual release. Not sure if the simulation looks real but I don't know how much better we can get. However this here is as good as I expect QTIP would have been if not better
     #incidents = ['48290550_0_300_1100_1200','48290550_1_300_1100_1200','48290550_2_300_1100_1200','48290550_3_300_1100_1600']   
     
+    incidents = ['E3_0_10_500_1200']
+
     traci.start(sumoCmd)
     
     while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() <= end_step:
@@ -128,34 +130,20 @@ if __name__ == "__main__":
         assert 'Please select scenario with --scenario'
 
    
-    print(f"Running {args.n_runs} simulation of {args.scenario} with start time {args.begin} and end time {args.end}")
+    print(f"Running {args.n_runs} simulations of scenario '{args.scenario}' with start time {args.begin} and end time {args.end}")
 
-    
-    #scenario_path1 = setup_run(scenario_folder=scenario_folder, edge_filename=f'{args.edge_filename}', run_num=1)
-    #sumoCmd1 = [sumoBinary, "-c", scenario_path1, "--begin", f"{args.begin}", "--end", f"{args.end}", "--start", "1", "--quit-on-end", "1"]
-    #run(sumoCmd=sumoCmd1, start_step=args.begin, end_step=args.end)
-    
-    #scenario_paths = []
-    #sumoCmds = []
-    #processes = []
-    #for run_num in range(0, args.run_num):
+    scenario_paths = []
+    sumoCmds = []
+    processes = []
 
+    # Create and start all sims
+    for run_num in range(0, args.n_runs):
+        sumoCmds.append(setup_run(scenario_folder=scenario_folder, edge_filename=args.edge_filename, run_num=run_num))
+        processes.append(Process(target=run, args=(sumoCmds[run_num], args.begin, args.end)))
+        processes[run_num].start()
 
-    
-    
-    #Scenario 1
-    sumoCmd1 = setup_run(scenario_folder=scenario_folder, edge_filename=f'{args.edge_filename}', run_num=1)
-    print(sumoCmd1)
-    p1 = Process(target=run, args=(sumoCmd1, args.begin, args.end))
-    
-    #Scenario 2 
-    sumoCmd2 = setup_run(scenario_folder=scenario_folder, edge_filename=f'{args.edge_filename}', run_num=2)
-    print(sumoCmd2)
-    p2 = Process(target=run, args=(sumoCmd2, args.begin, args.end))
-
-    p1.start()
-    p2.start()
-    p1.join()
-    p2.join()
+    # Wait for all sims to terminate
+    for process in processes:
+        process.join()
 
     cleanup_temp_files(scenario_folder=scenario_folder)

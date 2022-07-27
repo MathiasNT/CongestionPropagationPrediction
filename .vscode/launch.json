@@ -15,7 +15,9 @@
                 "--scenario",
                 "experiment",
                 "--edge_filename",
-                "debug_test"
+                "debug_test",
+                "--n_runs",
+                "4"
             ]
         },
         {

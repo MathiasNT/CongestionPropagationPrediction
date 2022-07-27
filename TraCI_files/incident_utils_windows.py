@@ -1,6 +1,4 @@
-#import traci
-
-import libsumo as traci
+import traci
 import numpy as np
 
 def block_lanes(lane_pos_times, step):
@@ -36,9 +34,9 @@ def block_lanes(lane_pos_times, step):
             print(f"creating block {lane_pos_time}")
             traci.route.add(incident_route_id, [edge])
             traci.vehicle.add(vehID=incident_veh_id, routeID=incident_route_id)
-            traci.vehicle.moveTo(vehID=incident_veh_id, laneID=f'{edge}_{lane}', position=int(pos)) # Note annoying difference in position or pos between libsum and traci
+            traci.vehicle.moveTo(vehID=incident_veh_id, laneID=f'{edge}_{lane}', pos=pos)
             traci.vehicle.setSpeed(vehID=incident_veh_id, speed=0)
-            traci.vehicle.setLaneChangeMode(vehID=incident_veh_id, laneChangeMode=0) # Again an annoying difference between libSumo and traci
+            traci.vehicle.setLaneChangeMode(vehID=incident_veh_id, lcm=0)
             new_lane_pos_times.append(lane_pos_time)
         elif step > time and (step-time)%100==0 and (step-time) < duration: # Starts moving block to avoid time out
             traci.vehicle.setSpeed(vehID=incident_veh_id, speed=0.101)
