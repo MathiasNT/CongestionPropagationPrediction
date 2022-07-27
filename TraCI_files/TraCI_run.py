@@ -4,7 +4,9 @@ import argparse
 import numpy as np
 from sumolib import checkBinary
 import traci
+#import libsumo as traci
 import xml.etree.ElementTree as ET
+from time import time
 
 from incident_utils import block_lanes
 
@@ -41,6 +43,7 @@ def setup_run(scenario_folder, edge_file):
 
 # contrains Traci control loop
 def run(start_step, end_step):
+    start_time = time()
     step = start_step
     print(f'step {step}') 
 
@@ -59,12 +62,11 @@ def run(start_step, end_step):
 
         step+=1
 
-        
-
     traci.close()
     sys.stdout.flush()
+    end_time = time()
 
-
+    print(f'finished in {end_time - start_time}')
 
 
 # main entry point
@@ -99,5 +101,5 @@ if __name__ == "__main__":
 
     print(f"Running simulation {args.scenario} with start time {args.begin} and end time {args.end}")
     # traci starts sumo as a subprocess and then this script connects and runs
-    traci.start([sumoBinary, "-c", scenario_path, "--tripinfo-output", 'tripinfo.xml',  "--begin", f"{args.begin}", "--end", f"{args.end}"]) # "--start", "1", "--quit-on-end", "1", 
+    traci.start([sumoBinary, "-c", scenario_path, "--tripinfo-output", 'tripinfo.xml',  "--begin", f"{args.begin}", "--end", f"{args.end}", "--start", "1", "--quit-on-end", "1"])
     run(start_step=args.begin, end_step=args.end)

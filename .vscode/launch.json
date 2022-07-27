@@ -15,7 +15,7 @@
                 "--scenario",
                 "experiment",
                 "--edge_file",
-                "test2.xml"
+                "debug_test.xml"
             ]
         },
         {
@@ -26,7 +26,8 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "Experiment/Results/test3.xml"
+                "--path",
+                "./Experiment/Results/test3.xml"
             ]
         },
     ]
