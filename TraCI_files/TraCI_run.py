@@ -82,9 +82,9 @@ def run(sumoCmd, start_step, end_step):
     incidents = []    
    
     # 'full block' example with gradual release. Not sure if the simulation looks real but I don't know how much better we can get. However this here is as good as I expect QTIP would have been if not better
-    #incidents = ['48290550_0_300_1100_1200','48290550_1_300_1100_1200','48290550_2_300_1100_1200','48290550_3_300_1100_1600']   
+    #incidents = ['48290550_0_300_11000_1200','48290550_1_300_11000_1200','48290550_2_300_11000_1200','48290550_3_300_11000_1600']   
     
-    incidents = ['E3_0_10_500_1200']
+    #incidents = ['E3_0_10_500_1200']
 
     traci.start(sumoCmd)
     

@@ -28,8 +28,16 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "--path",
-                "./Experiment/Results/test3.xml"
+                "--scenario",
+                "motorway",
+                "--edge_filename",
+                "debug_test",
+                "--n_runs",
+                "4",
+                "--begin",
+                "1000",
+                "--end",
+                "3000"
             ]
         },
     ]
