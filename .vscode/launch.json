@@ -17,7 +17,9 @@
                 "--edge_filename",
                 "debug_test",
                 "--n_runs",
-                "4"
+                "4",
+                "--end",
+                "1000"
             ]
         },
         {

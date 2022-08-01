@@ -12,6 +12,7 @@ from time import time
 from multiprocessing import Process
 
 from incident_utils_libsumo import block_lanes
+from setup_utils import setup_run, cleanup_temp_files
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -32,43 +33,6 @@ def get_args():
     args = arg_parser.parse_args()
     return args
 
-def setup_run(scenario_folder, edge_filename, run_num):
-    # Create temp add file
-    add_path = f'{scenario_folder}/Simulations/Base/edgedata'
-    add_base = f'{add_path}.add.xml'
-    add_temp = f'{add_path}_temp{run_num}.add.xml' 
-    edge_file = f'{scenario_folder}/Results/{edge_filename}{run_num}.xml'
-    
-    xml_tree = ET.parse(add_base)    
-    xml_root = xml_tree.getroot()
-    edge_data_settings = xml_root[0]
-    edge_data_settings.set('file', edge_file)
-    xml_tree.write(add_temp)
-
-    # Create temp config file
-    config_path = f'{scenario_folder}/Simulations/Base/simulation'
-    config_base = f'{config_path}.sumo.cfg'
-    config_temp = f'{config_path}_temp{run_num}.sumo.cfg'
-
-    xml_tree = ET.parse(config_base)
-    xml_root = xml_tree.getroot()
-    add_elem = xml_root.find('input').find('additional-files')
-    old_add_files = add_elem.get('value')
-    add_elem.set('value', f'{old_add_files},edgedata_temp{run_num}.add.xml')
-    xml_tree.write(config_temp)
-
-    sumoCmd = [sumoBinary, "-c", config_temp, "--begin", f"{args.begin}", "--end", f"{args.end}", "--start", "1", "--quit-on-end", "1"]
-    return sumoCmd
-
-def cleanup_temp_files(scenario_folder):
-    sim_folder = f'{scenario_folder}/Simulations/Base'
-    for file in glob.glob(f"{sim_folder}/*temp*"):
-        os.remove(file)
-
-
-
-
-
 # contrains Traci control loop
 def run(sumoCmd, start_step, end_step):
     start_time = time()
@@ -78,7 +42,7 @@ def run(sumoCmd, start_step, end_step):
     # 'full block' example with gradual release. Not sure if the simulation looks real but I don't know how much better we can get. However this here is as good as I expect QTIP would have been if not better
     #incidents = ['48290550_0_300_1100_1200','48290550_1_300_1100_1200','48290550_2_300_1100_1200','48290550_3_300_1100_1600']   
     
-    incidents = ['E3_0_10_500_1200']
+    #incidents = ['E3_0_10_500_1200']
 
     traci.start(sumoCmd)
     
@@ -98,11 +62,6 @@ def run(sumoCmd, start_step, end_step):
 # main entry point
 if __name__ == "__main__":
     args = get_args()
-    # check binary
-    if args.gui:
-        sumoBinary = checkBinary('sumo-gui')
-    else:
-        sumoBinary = checkBinary('sumo')
 
     if args.scenario=='motorway':
         print('Motorway scenario selected')
@@ -132,7 +91,7 @@ if __name__ == "__main__":
 
     # Create and start all sims
     for run_num in range(0, args.n_runs):
-        sumoCmds.append(setup_run(scenario_folder=scenario_folder, edge_filename=args.edge_filename, run_num=run_num))
+        sumoCmds.append(setup_run(scenario_folder=scenario_folder, edge_filename=args.edge_filename, run_num=run_num, begin=args.begin, end=args.end))
         processes.append(Process(target=run, args=(sumoCmds[run_num], args.begin, args.end)))
         processes[run_num].start()
 
