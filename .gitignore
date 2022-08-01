@@ -1,6 +1,6 @@
 # Ignore results folders
 */Results/*
-
+.vscode/
 
 
 
