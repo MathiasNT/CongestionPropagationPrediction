@@ -32,5 +32,22 @@
                 "./Experiment/Results/test3.xml"
             ]
         },
+        {
+            "name": "Python: Current File gui",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--scenario",
+                "experiment",
+                "--edge_filename",
+                "debug_test",
+                "--n_runs",
+                "4",
+                "--gui"
+            ]
+        },
     ]
 }

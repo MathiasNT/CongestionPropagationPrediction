@@ -2,7 +2,7 @@ from utils import dotdict
 from utils import xml2csv
 import xml.sax
 import os
-
+import glob
 
 def xml2csv_file(file_path):
     '''
@@ -16,7 +16,7 @@ def xml2csv_file(file_path):
 
 def xml2csv_path(path):
     if os.path.isdir(path):
-        for filename in os.listdir(path):
+        for filename in glob.glob(f'{path}/*.xml'):
             xml2csv_file(f'{path}/{filename}')
     else:
         xml2csv_file(path)

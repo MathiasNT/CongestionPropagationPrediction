@@ -1,9 +1,4 @@
-#TODO Implement parallel
-#TODO test if config is only used on startup
-#TODO Check if information comes from all threads
 #TODO Implement naming for results for parallel runs
-#TODO Check if runs are deterministic or if we can change it up
-#TODO Update git ignore file
 
 import os
 import sys
@@ -11,12 +6,12 @@ import argparse
 import glob
 import numpy as np
 from sumolib import checkBinary
-import traci
+import libsumo as traci
 import xml.etree.ElementTree as ET
 from time import time
 from multiprocessing import Process
 
-from incident_utils_traci import block_lanes
+from incident_utils_libsumo import block_lanes
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -62,7 +57,7 @@ def setup_run(scenario_folder, edge_filename, run_num):
     add_elem.set('value', f'{old_add_files},edgedata_temp{run_num}.add.xml')
     xml_tree.write(config_temp)
 
-    sumoCmd = [sumoBinary, "-c", config_temp, "--begin", f"{args.begin}", "--end", f"{args.end}", "--start", "0", "--quit-on-end", "0"]
+    sumoCmd = [sumoBinary, "-c", config_temp, "--begin", f"{args.begin}", "--end", f"{args.end}", "--start", "1", "--quit-on-end", "1"]
     return sumoCmd
 
 def cleanup_temp_files(scenario_folder):
@@ -83,20 +78,8 @@ def run(sumoCmd, start_step, end_step):
     # 'full block' example with gradual release. Not sure if the simulation looks real but I don't know how much better we can get. However this here is as good as I expect QTIP would have been if not better
     #incidents = ['48290550_0_300_1100_1200','48290550_1_300_1100_1200','48290550_2_300_1100_1200','48290550_3_300_1100_1600']   
     
-    #python .\traci_run.py --scenario experiment --gui
-    #incidents = ['E3_0_10_500_1200']
-    #incidents = ['E3_0_10_500_1200', 'E3_1_10_500_1200']
-    #incidents = ['E1_2_10_500_1200', 'E1_1_10_500_1200'] # THis incident but sim didn't crash?????? at 80
-    #incidents = ['E1_0_10_500_1200', 'E1_1_10_500_1200'] # THis incident but sim didn't crash?????? at 80
-    #incidents = ['E1_2_10_500_1200', 'E1_1_10_500_1200', 'E1_0_10_500_1200'] # THis incident but sim didn't crash?????? at 80
-    
-    
-    #python .\traci_run.py --scenario motorway --gui --begin 50000
-    incidents = ['48290550_0_300_50500_1200','48290550_1_300_50500_1200','48290550_2_300_50500_1200','4829550_3_300_50500_1600']   
-    
-    # python .\traci_run.py --scenario urban --gui --begin 50000
-    #incidents = ['360313821_0_50_50500_1200','360313821_1_50_50500_1200','360313821_2_50_50500_1200'] # Shows the need for rerouting
-    
+    incidents = ['E3_0_10_500_1200']
+
     traci.start(sumoCmd)
     
     while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() <= end_step:
@@ -123,16 +106,20 @@ if __name__ == "__main__":
 
     if args.scenario=='motorway':
         print('Motorway scenario selected')
-        scenario_folder = 'C:/Users/mnity/Desktop/quick_adap_to_incidents/Motorway'
+        #scenario_folder = 'C:/Users/mnity/Desktop/quick_adap_to_incidents/Motorway'
+        scenario_folder = '/home/manity/Quick_adap/quick_adap_to_incidents/Motorway'
     elif args.scenario=='national':
         print('National scenario selected')
-        scenario_folder = 'C:/Users/mnity/Desktop/quick_adap_to_incidents/National'
+        #scenario_folder = 'C:/Users/mnity/Desktop/quick_adap_to_incidents/National'
+        scenario_folder = '/home/manity/Quick_adap/quick_adap_to_incidents/National'
     elif args.scenario=='urban':
         print('Urban scenario selected')
-        scenario_folder = 'C:/Users/mnity/Desktop/quick_adap_to_incidents/Urban'
+        #scenario_folder = 'C:/Users/mnity/Desktop/quick_adap_to_incidents/Urban'
+        scenario_folder = '/home/manity/Quick_adap/quick_adap_to_incidents/Urban'
     elif args.scenario=='experiment':
         print('Experiment scenario')
-        scenario_folder = 'C:/Users/mnity/Desktop/quick_adap_to_incidents/Experiment'
+        #scenario_folder = 'C:/Users/mnity/Desktop/quick_adap_to_incidents/Experiment'
+        scenario_folder = '/home/manity/Quick_adap/quick_adap_to_incidents/Experiment'
     else:
         assert 'Please select scenario with --scenario'
 
@@ -143,8 +130,14 @@ if __name__ == "__main__":
     sumoCmds = []
     processes = []
 
-    sumoCmds.append(setup_run(scenario_folder=scenario_folder, edge_filename=args.edge_filename, run_num=0))
-    run(sumoCmds[0], args.begin, args.end)
+    # Create and start all sims
+    for run_num in range(0, args.n_runs):
+        sumoCmds.append(setup_run(scenario_folder=scenario_folder, edge_filename=args.edge_filename, run_num=run_num))
+        processes.append(Process(target=run, args=(sumoCmds[run_num], args.begin, args.end)))
+        processes[run_num].start()
 
+    # Wait for all sims to terminate
+    for process in processes:
+        process.join()
 
     cleanup_temp_files(scenario_folder=scenario_folder)
