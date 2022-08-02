@@ -3,11 +3,8 @@
 import os
 import sys
 import argparse
-import glob
-import numpy as np
-from sumolib import checkBinary
+from sumolib import checkBinary # For some reason this import fixes problems with importing libsumo.
 import libsumo as traci
-import xml.etree.ElementTree as ET
 from time import time
 from multiprocessing import Process
 
@@ -24,12 +21,13 @@ else:
 def get_args():
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--gui", action="store_true",
-                            default=False, help="run the gui version of sumo")
+                            default=False, help="run the gui version of sumo.")
     arg_parser.add_argument("--scenario", choices=['motorway', 'national', 'urban', 'experiment'], help='Which scenatio to run.', required=True)
-    arg_parser.add_argument("--begin", type=int, default=0, help="Start time of the simulator")
-    arg_parser.add_argument("--end", type=int, default=86400, help="End time of the simulator")
-    arg_parser.add_argument("--edge_filename", type=str, default="edgedata", help="The name of the edge data file without xml extension.")
-    arg_parser.add_argument("--n_runs", type=int, default=1, help="The number of simulations to run in parallel")
+    arg_parser.add_argument("--begin", type=int, default=0, help="Start time of the simulator.")
+    arg_parser.add_argument("--end", type=int, default=86400, help="End time of the simulator.")
+    arg_parser.add_argument("--simulation_name", type=str, default="edgedata", help="The name of the simulation run. Will be name of numbere results folder.")
+    arg_parser.add_argument("--n_runs", type=int, default=1, help="The number of simulations to run in parallel.")
+    arg_parser.add_argument("--trip_info", action="store_true", default=False, help="Save information of all trips.")
     args = arg_parser.parse_args()
     return args
 
@@ -63,36 +61,27 @@ def run(sumoCmd, start_step, end_step):
 if __name__ == "__main__":
     args = get_args()
 
-    if args.scenario=='motorway':
-        print('Motorway scenario selected')
-        #scenario_folder = 'C:/Users/mnity/Desktop/quick_adap_to_incidents/Motorway'
-        scenario_folder = '/home/manity/Quick_adap/quick_adap_to_incidents/Motorway'
-    elif args.scenario=='national':
-        print('National scenario selected')
-        #scenario_folder = 'C:/Users/mnity/Desktop/quick_adap_to_incidents/National'
-        scenario_folder = '/home/manity/Quick_adap/quick_adap_to_incidents/National'
-    elif args.scenario=='urban':
-        print('Urban scenario selected')
-        #scenario_folder = 'C:/Users/mnity/Desktop/quick_adap_to_incidents/Urban'
-        scenario_folder = '/home/manity/Quick_adap/quick_adap_to_incidents/Urban'
-    elif args.scenario=='experiment':
-        print('Experiment scenario')
-        #scenario_folder = 'C:/Users/mnity/Desktop/quick_adap_to_incidents/Experiment'
-        scenario_folder = '/home/manity/Quick_adap/quick_adap_to_incidents/Experiment'
-    else:
-        assert 'Please select scenario with --scenario'
-
+    scenario_folder = f'/home/manity/Quick_adap/quick_adap_to_incidents/{args.scenario}'
+    print(f'{args.scenario} selected')
+    
    
     print(f"Running {args.n_runs} simulations of scenario '{args.scenario}' with start time {args.begin} and end time {args.end}")
 
-    scenario_paths = []
-    sumoCmds = []
+    simulation_settings = []
     processes = []
 
     # Create and start all sims
     for run_num in range(0, args.n_runs):
-        sumoCmds.append(setup_run(scenario_folder=scenario_folder, edge_filename=args.edge_filename, run_num=run_num, begin=args.begin, end=args.end))
-        processes.append(Process(target=run, args=(sumoCmds[run_num], args.begin, args.end)))
+        simulation_settings.append(
+            setup_run(scenario_folder=scenario_folder,
+                      simulation_name=args.simulation_name,
+                      run_num=run_num,
+                      begin=args.begin,
+                      end=args.end,
+                      trip_info=args.trip_info))
+        processes.append(
+            Process(target=run,
+                    args=(simulation_settings[run_num]['sumoCmd'], args.begin, args.end)))
         processes[run_num].start()
 
     # Wait for all sims to terminate

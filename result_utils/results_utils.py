@@ -1,5 +1,5 @@
-from utils import dotdict
-from utils import xml2csv
+from result_utils import dotdict
+from result_utils import xml2csv
 import xml.sax
 import os
 import glob

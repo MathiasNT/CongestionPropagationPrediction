@@ -14,12 +14,11 @@
             "args": [
                 "--scenario",
                 "experiment",
-                "--edge_filename",
+                "--simulation_name",
                 "debug_test",
                 "--n_runs",
                 "4",
-                "--end",
-                "1000"
+                "--trip_info"
             ]
         },
         {
