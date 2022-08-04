@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from sumolib import checkBinary
 import glob
 
-def setup_run(scenario_folder, simulation_name, run_num, begin, end, trip_info):
+def setup_run(scenario_folder, simulation_name, run_num, begin, end, trip_info, verbose):
     # Create simulation folder and results filenames
     sim_num = 0
     simulation_folder = f'{scenario_folder}/Results/{simulation_name}_{sim_num}'
@@ -35,10 +35,14 @@ def setup_run(scenario_folder, simulation_name, run_num, begin, end, trip_info):
     add_elem.set('value', f'{old_add_files},edgedata_temp{run_num}.add.xml')
     xml_tree.write(config_temp)
 
-    sumoCmd = [checkBinary('sumo'), "-c", config_temp, "--begin", f"{begin}", "--end", f"{end}"]
+    sumoCmd = [checkBinary('sumo'), "-c", config_temp, "--begin", f"{begin}", "--end", f"{end}"] #TODO update this with begin and end from incident
     
     if trip_info:
         sumoCmd = sumoCmd + ['--tripinfo-output', f'{simulation_folder}/trips.xml']
+
+    if verbose:
+        sumoCmd = sumoCmd + ['--error-log', f'{simulation_folder}/error_log.xml']
+        sumoCmd = sumoCmd + ['--message-log', f'{simulation_folder}/message_log.xml']
 
     return {'sumoCmd':sumoCmd, 'simulation_folder':simulation_folder}
 
