@@ -4,14 +4,13 @@ import os
 from shutil import ExecError
 import sys
 import argparse
-from sumolib import checkBinary
-from traitlets import default # For some reason this import fixes problems with importing libsumo.
+from sumolib import checkBinary # For some reason this import fixes problems with importing libsumo.
 import libsumo as traci
 from time import time
 from multiprocessing import Process
 
-from incident_utils_libsumo import block_lanes, IncidentSettings
-from setup_utils import setup_run, cleanup_temp_files
+from incident_utils_libsumo import block_lanes, IncidentSettings, create_counterfactual
+from setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -27,11 +26,12 @@ def get_args():
     arg_parser.add_argument("--scenario", choices=['motorway', 'national', 'urban', 'experiment'], help='Which scenatio to run.', required=True)
     arg_parser.add_argument("--begin", type=int, default=0, help="Start time of the simulator.")
     arg_parser.add_argument("--end", type=int, default=86400, help="End time of the simulator.")
+    arg_parser.add_argument("--incident_only", action='store_true', default=False, help="If true only simulates the time around the congestion")
     arg_parser.add_argument("--simulation_name", type=str, default="edgedata", help="The name of the simulation run. Will be name of numbere results folder.")
     arg_parser.add_argument("--n_random_incidents", type=int, default=0, help="The number of random incidents to simulate")
     arg_parser.add_argument("--n_non_incidents", type=int, default=0, help="The number of simulations without incident to run") #TODO implement
     arg_parser.add_argument("--incidents_settings_file", type=str, default=None, help="Path to the incident settings file") #TODO implement
-    arg_parser.add_argument("--do_counterfactual", action='store_true', default=False, help="For any incident run the counterfactual of no incident")
+    arg_parser.add_argument("--do_counterfactuals", action='store_true', default=False, help="For any incident run the counterfactual of no incident")
     arg_parser.add_argument("--trip_info", action="store_true", default=False, help="Save information of all trips.")
     arg_parser.add_argument("--verbose", action="store_true", default=False, help="Save error and message log of SUMO warnings and errors")
     args = arg_parser.parse_args()
@@ -51,11 +51,14 @@ def run(simulation_settings, start_time, end_time, incident_settings):
    
     traci.start(simulation_settings['sumoCmd'])
 
-    incident_settings.random()
+    if incident_settings.is_random:
+        incident_settings.random()
+
     incident_settings.save_incident_information(simulation_settings['simulation_folder'])
 
     while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() <= end_time:
-        block_lanes(incident_settings, step)
+        if incident_settings.is_incident:
+            block_lanes(incident_settings, step)
 
         #print(f'step {step}, my time {sim_time}, true sim time {traci.simulation.getTime()}')
 
@@ -72,48 +75,105 @@ def run(simulation_settings, start_time, end_time, incident_settings):
 
 # main entry point
 if __name__ == "__main__":
+
+    # Hardcoded values TODO check if they need to be fixed
+    simulation_warmup_time = 3600 # 1 hour
+    simulation_congestion_time = 14400 # 4 hours
+
     args = get_args()
     
+    incident_settings = []
     if args.n_random_incidents > 0:
         print(f"Running {args.n_random_incidents} simulations of scenario '{args.scenario}' with random incidents")
-        incident_settings = []
         for i in range(args.n_random_incidents):
             incident_settings.append(IncidentSettings(run_num=i, is_random=True))
-            # TODO has to be able to do no incident as well        
         n_runs = args.n_random_incidents
-    if args.n_non_incidents > 0:
+
+        if args.do_counterfactuals:
+            counterfactual_settings = []
+            for i in range(args.n_random_incidents):
+                counterfactual_settings.append(create_counterfactual(incident_settings[i]))                  
+
+    elif args.n_non_incidents > 0:
         print(f"Running {args.n_non_incidents} simulations of scenario '{args.scenario}' with no incidents")
-    if args.incidents_settings_file is not None:
+        for i in range(args.n_non_incidents):
+            incident_settings.append(IncidentSettings(run_num=i))
+        n_runs = args.n_non_incidents
+
+        if args.do_counterfactuals:
+            raise Exception('No reason to do counterfactuals without incidents')
+
+    elif args.incidents_settings_file is not None:
         print(f"Running simulations of scenario '{args.scenario}' using incidents in {args.incidents_settings_file}")
+        # TODO has to be able to do incident file as well        
 
     scenario_folder = f'/home/manity/Quick_adap/quick_adap_to_incidents/{args.scenario}'
 
 
-    simulation_settings = []
+    sim_settings = []
     processes = []
+    counterfactual_sim_settings = []
+    counterfactual_processes = []
 
-    #TODO setup random generation of incident times here as it is needed for selection of time, so I can make more simulations in the time
-    #TODO setup the needed framework for different incidents in simulation here.
-    #TODO       The idea is generate them above this and input a list of incidents (or just incident? yea to start) as input to run.
     # Create and start all sims
     for run_num in range(0, n_runs):
-        simulation_settings.append(
-            setup_run(scenario_folder=scenario_folder,
+
+        if args.incident_only:
+            simulation_start_time = (incident_settings[run_num].start_time - simulation_warmup_time)
+            simulation_end_time = (simulation_start_time + incident_settings[run_num].duration_time + simulation_congestion_time)
+        else:
+            simulation_start_time =  args.begin
+            simulation_end_time = args.end
+
+        sim_settings.append(
+            setup_incident_sim(scenario_folder=scenario_folder,
                       simulation_name=args.simulation_name,
                       run_num=run_num,
-                      begin=args.begin,
-                      end=args.end,
+                      begin=simulation_start_time,
+                      end=simulation_end_time,
                       trip_info=args.trip_info,
-                      verbose=args.verbose))
+                      verbose=args.verbose
+            )
+        )
         
         processes.append(
             Process(target=run,
-                    args=(simulation_settings[run_num], args.begin, args.end, incident_settings[run_num])))
+                    args=(sim_settings[run_num], simulation_start_time, simulation_end_time, incident_settings[run_num])
+            )
+        )
 
+        print(f'Starting run {run_num} at time {simulation_start_time}. Running until {simulation_end_time}')
         processes[run_num].start()
+
+        if args.do_counterfactuals:
+            counterfactual_sim_settings.append(
+                setup_counterfactual_sim(
+                    scenario_folder=scenario_folder,
+                    simulation_folder=sim_settings[run_num]['simulation_folder'],
+                    run_num=run_num,
+                    begin=simulation_start_time,
+                    end=simulation_end_time,
+                    trip_info=args.trip_info,
+                    verbose=args.verbose
+                )
+            )
+
+            counterfactual_processes.append(
+                Process(target=run,
+                        args=(counterfactual_sim_settings[run_num], simulation_start_time, simulation_end_time, counterfactual_settings[run_num])
+                )
+            )
+
+            print(f'Starting counterfactual {run_num} at time {simulation_start_time}. Running until {simulation_end_time}')
+            counterfactual_processes[run_num].start()
+            
 
     # Wait for all sims to terminate
     for process in processes:
         process.join()
+
+    if args.do_counterfactuals:
+        for process in counterfactual_processes:
+            process.join()
 
     cleanup_temp_files(scenario_folder=scenario_folder)

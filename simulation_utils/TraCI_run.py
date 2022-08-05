@@ -1,10 +1,3 @@
-#TODO Implement parallel
-#TODO test if config is only used on startup
-#TODO Check if information comes from all threads
-#TODO Implement naming for results for parallel runs
-#TODO Check if runs are deterministic or if we can change it up
-#TODO Update git ignore file
-
 import os
 import sys
 import argparse

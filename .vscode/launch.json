@@ -16,10 +16,10 @@
                 "experiment",
                 "--simulation_name",
                 "debug_test",
-                "--trip_info",
                 "--verbose",
                 "--n_random_incidents",
-                "100",
+                "2",
+                "--do_counterfactuals"
             ]
         },
         {

@@ -9,6 +9,10 @@ def np_encoder(object):
     if isinstance(object, np.generic):
         return object.item()
 
+def create_counterfactual(incident_settings):
+    counterfactual = IncidentSettings(run_num=incident_settings.run_num)
+    counterfactual.set_incident(start_time=incident_settings.start_time, duration=incident_settings.duration_time)
+    return counterfactual
 
 #TODO Think if we want to be able to specify the distributions to get the incidents from?
 class IncidentSettings():
@@ -26,9 +30,13 @@ class IncidentSettings():
         self.duration_time = None
         self.duration_steps = None
 
-    def set_incident(self, edge=None, lanes=None, pos=None, start_time=None, duration=None):
+        if self.is_random:
+            self.random_time()
+            self.random_duration()
+
+    def set_incident(self, edge=None, lanes=None, pos=None, start_time=None, duration=None, is_incident=False):
         # Fills out an incident with predefined values. Note that not all needs to be filled out if you want some of it random.
-        self.is_incident = True
+        self.is_incident = is_incident
         self.edge = edge
         self.lanes = lanes
         self.pos = pos
@@ -36,8 +44,6 @@ class IncidentSettings():
         self.start_step = start_time * 2
         self.duration_time = duration
         self.duration_steps = duration * 2
-        
-        self.is_incident = True
 
     def random(self):
         # Fills out incident variables that are not set randomly
@@ -58,6 +64,7 @@ class IncidentSettings():
         self.is_incident = True
 
     def random_edge(self):
+        # TODO could use lane.getMaxSpeed to select only highway edges
         object_list = traci.edge.getIDList() 
         edge_list = [edge for edge in object_list if not edge.startswith(':')] # Remove junctions
         self.edge = np.random.choice(edge_list)
@@ -80,16 +87,18 @@ class IncidentSettings():
         return
 
     def random_duration(self):
-        self.duration_time = np.rint(np.random.normal(1200, 100)).astype(int) #TODO this should really be rounded to 0.5
+        self.duration_time = np.rint(np.random.normal(1200, 100)).astype(int) # This could be made more precise by rounding to to 0.5, if SUMO can take that time
         self.duration_steps = self.duration_time * 2
         return
 
     def save_incident_information(self, folder_path):
-        json_str = json.dumps(self.__dict__, default=np_encoder)
-        file = open(f'{folder_path}/incident_settings.json', 'w+') 
-        file.write(json_str)
-        #TODO Just get too much information I can always limit it later
+        if self.is_incident:
+            json_str = json.dumps(self.__dict__, default=np_encoder)
+            file = open(f'{folder_path}/incident_settings.json', 'w+') 
+            file.write(json_str)
+            #TODO Figure out if I want more information
         return
+
 
 def block_lanes(incident_settings, step):
     """Blocks lanes at the specified position and timesteps
