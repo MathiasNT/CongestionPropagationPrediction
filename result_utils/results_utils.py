@@ -16,7 +16,10 @@ def xml2csv_file(file_path):
 
 def xml2csv_path(path):
     if os.path.isdir(path):
-        for filename in glob.glob(f'{path}/*.xml'):
-            xml2csv_file(filename)
+        files = glob.glob(f'{path}/*.xml')
+        result_files = [file for file in files if 'log' not in file]
+        for filename in result_files:
+            if 'log' not in filename:
+                xml2csv_file(filename)
     else:
         xml2csv_file(path)

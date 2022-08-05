@@ -36,7 +36,7 @@ try:
 except ImportError:
     haveLxml = False
 
-from utils import xsd
+from result_utils import xsd
 
 
 class NestingHandler(xml.sax.handler.ContentHandler):
