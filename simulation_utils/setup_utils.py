@@ -82,6 +82,14 @@ def setup_counterfactual_sim(scenario_folder, simulation_folder, run_num, begin,
 
     return {'sumoCmd':sumoCmd, 'simulation_folder':simulation_folder}
 
+def setup_gui_sim(scenario_folder, begin, end):
+    # Create temp config file
+    config_path = f'{scenario_folder}/Simulations/Base/simulation.sumo.cfg'
+
+    sumoCmd = [checkBinary('sumo-gui'), "-c", config_path, "--begin", f"{begin}", "--end", f"{end}"]
+
+    return {'sumoCmd':sumoCmd, 'simulation_folder':'temp'}
+
 def cleanup_temp_files(scenario_folder):
     sim_folder = f'{scenario_folder}/Simulations/Base'
     for file in glob.glob(f"{sim_folder}/*temp*"):

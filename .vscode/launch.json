@@ -54,8 +54,6 @@
                 "experiment",
                 "--edge_filename",
                 "debug_test",
-                "--n_runs",
-                "4",
                 "--gui"
             ]
         },

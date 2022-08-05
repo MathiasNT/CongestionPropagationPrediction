@@ -10,6 +10,6 @@
 
     <route id="route_0" edges="E0 E1 E2 E3 E4 E5 E6"/>
 
-    <flow id="carflow" type="car" beg="0" end="84000" vehsPerHour="50" from="E0" to="E6"/>
+    <flow id="carflow" type="car" beg="0" end="84000" vehsPerHour="40" from="E0" to="E6"/>
 
 </routes>
