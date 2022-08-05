@@ -77,7 +77,7 @@ def run(sumoCmd, start_step, end_step):
     #incidents = ['48290550_0_300_11000_1200','48290550_1_300_11000_1200','48290550_2_300_11000_1200','48290550_3_300_11000_1600']   
     
     #python .\traci_run.py --scenario experiment --gui
-    #incidents = ['E3_0_10_500_1200']
+    incidents = [':J0_0_10_500_1200']
     #incidents = ['E3_0_10_500_1200', 'E3_1_10_500_1200']
     #incidents = ['E1_2_10_500_1200', 'E1_1_10_500_1200'] # THis incident but sim didn't crash?????? at 80
     #incidents = ['E1_0_10_500_1200', 'E1_1_10_500_1200'] # THis incident but sim didn't crash?????? at 80
@@ -85,7 +85,7 @@ def run(sumoCmd, start_step, end_step):
     
     
     #python .\traci_run.py --scenario motorway --gui --begin 50000
-    incidents = ['48290550_0_300_50500_1200','48290550_1_300_50500_1200','48290550_2_300_50500_1200','4829550_3_300_50500_1600']   
+    #incidents = ['48290550_0_300_50500_1200','48290550_1_300_50500_1200','48290550_2_300_50500_1200','4829550_3_300_50500_1600']   
     
     # python .\traci_run.py --scenario urban --gui --begin 50000
     #incidents = ['360313821_0_50_50500_1200','360313821_1_50_50500_1200','360313821_2_50_50500_1200'] # Shows the need for rerouting
