@@ -19,7 +19,8 @@
                 "--verbose",
                 "--n_random_incidents",
                 "2",
-                "--do_counterfactuals"
+                "--do_counterfactuals",
+                "--incident_only"
             ]
         },
         {
