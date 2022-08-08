@@ -93,7 +93,7 @@ if __name__ == "__main__":
     
     incident_settings.set_incident(
         edge='E1',
-        lanes=[1],
+        lanes=[0,1,2],
         pos=5,
         start_time=100,
         duration=1140,
