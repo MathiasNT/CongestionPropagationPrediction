@@ -50,13 +50,6 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": [
-                "--scenario",
-                "experiment",
-                "--edge_filename",
-                "debug_test",
-                "--gui"
-            ]
         },
     ]
 }

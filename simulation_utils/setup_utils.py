@@ -88,7 +88,7 @@ def setup_gui_sim(scenario_folder, begin, end):
 
     sumoCmd = [checkBinary('sumo-gui'), "-c", config_path, "--begin", f"{begin}", "--end", f"{end}"]
 
-    return {'sumoCmd':sumoCmd, 'simulation_folder':'temp'}
+    return {'sumoCmd':sumoCmd, 'simulation_folder':'temp', 'scenario_folder':scenario_folder}
 
 def cleanup_temp_files(scenario_folder):
     sim_folder = f'{scenario_folder}/Simulations/Base'

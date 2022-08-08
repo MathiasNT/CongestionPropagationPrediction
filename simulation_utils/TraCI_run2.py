@@ -9,7 +9,7 @@ import traci
 from time import time
 from multiprocessing import Process
 
-from incident_utils_traci import block_lanes, IncidentSettings 
+from incident_utils_traci import IncidentSettings, SUMOIncident 
 from setup_utils import setup_gui_sim, cleanup_temp_files
 
 if 'SUMO_HOME' in os.environ:
@@ -39,9 +39,14 @@ def run(simulation_settings, start_time, end_time, incident_settings):
     if incident_settings.is_random:
         incident_settings.random()
 
+    if incident_settings.is_incident:
+        sumo_incident = SUMOIncident(incident_settings=incident_settings)
+        sumo_incident.traci_init(simulation_settings['scenario_folder'])
+
+
     while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() <= end_time:
         if incident_settings.is_incident:
-            block_lanes(incident_settings, step)
+           sumo_incident.sim_incident(step) 
 
         #print(f'step {step}, my time {sim_time}, true sim time {traci.simulation.getTime()}')
 
@@ -60,7 +65,7 @@ def run(simulation_settings, start_time, end_time, incident_settings):
 if __name__ == "__main__":
 
     # Hardcoded values TODO check if they need to be fixed
-    simulation_warmup_time = 3600 # 1 hour
+    simulation_warmup_time = 100 # 3600 is 1 hour
     simulation_congestion_time = 14400 # 4 hours
 
     ############ CHANGE THIS BLOCK FOR DIFFERENT SCENARIOS ###########
@@ -81,18 +86,28 @@ if __name__ == "__main__":
     
     # python .\traci_run.py --scenario urban --gui --begin 50000
     #incidents = ['360313821_0_50_50500_1200','360313821_1_50_50500_1200','360313821_2_50_50500_1200'] # Shows the need for rerouting
-    scenario = 'motorway'
+    scenario = 'experiment'
     scenario_folder = f'C:/Users/mnity/Desktop/quick_adap_to_incidents/{scenario}'
     
     incident_settings = IncidentSettings(run_num=0)
+    
     incident_settings.set_incident(
-        edge='E3',
-        lanes=[0,1],
-        pos=40,
-        start_time=200,
-        duration=1200,
-        is_incident=False,
+        edge='E1',
+        lanes=[1],
+        pos=5,
+        start_time=100,
+        duration=1140,
+        is_incident=True,
     )
+
+    #incident_settings.set_incident(
+        #edge='360361373',
+        #lanes=[0,1],
+        #pos=358.1722741760613,
+        #start_time=67208,
+        #duration=1140,
+        #is_incident=True,
+    #)
     ###########################
 
     simulation_start_time = 0
