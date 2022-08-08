@@ -185,16 +185,17 @@ class SUMOIncident():
                 if cars_on_edge:
                     for veh in cars_on_edge:
                         veh_pos_on_edge = traci.vehicle.getLanePosition(veh)
-                        dist_to_free_lane = np.min(np.abs(lane - np.array(self.free_lanes)))
                         dist_to_incident =  self.pos - veh_pos_on_edge
                         if 0 < dist_to_incident < self.slow_zone:
                             traci.vehicle.setMaxSpeed(veh, self.slow_zone_speed)
                         
-                        if 0 < dist_to_incident < self.lc_prob_zone * dist_to_free_lane:
-                            target_lane = min(self.free_lanes, key=lambda x:abs(x-traci.vehicle.getLaneIndex(veh)))
-                            frac_of_prob_zone_left = dist_to_incident / (self.lc_prob_zone - self.lc_zone)
-                            if np.random.uniform() > frac_of_prob_zone_left:
-                                traci.vehicle.changeLane(veh, target_lane, 0.1)
+                        if self.free_lanes:
+                            dist_to_free_lane = np.min(np.abs(lane - np.array(self.free_lanes)))
+                            if 0 < dist_to_incident < self.lc_prob_zone * dist_to_free_lane:
+                                target_lane = min(self.free_lanes, key=lambda x:abs(x-traci.vehicle.getLaneIndex(veh)))
+                                frac_of_prob_zone_left = dist_to_incident / (self.lc_prob_zone - self.lc_zone)
+                                if np.random.uniform() > frac_of_prob_zone_left:
+                                    traci.vehicle.changeLane(veh, target_lane, 0.1)
                             
                         if veh_pos_on_edge > self.pos:
                             veh_class = traci.vehicle.getVehicleClass(veh)
