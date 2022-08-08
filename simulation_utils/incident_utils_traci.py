@@ -216,14 +216,15 @@ class SUMOIncident():
                             dist_to_edge_end =  self.upstream_edges_length_dict[edge] - veh_pos_on_edge
                             if dist_to_edge_end < self.upstream_slow_zone:
                                 traci.vehicle.setMaxSpeed(veh, self.slow_zone_speed)
-                         
-                            if self.incident_edge_lanes == self.upstream_edges_n_lanes_dict[edge]: # Note this is only implemented if the junction is 1-to-1
-                                dist_to_free_lane = np.min(np.abs(lane - np.array(self.free_lanes)))
-                                if 0 < dist_to_edge_end < self.upstream_lc_prob_zone * dist_to_free_lane:
-                                    target_lane = min(self.free_lanes, key=lambda x:abs(x-traci.vehicle.getLaneIndex(veh)))
-                                    frac_of_prob_zone_left = (dist_to_edge_end - self.pos) / (self.lc_prob_zone - self.lc_zone)
-                                    if np.random.uniform() > frac_of_prob_zone_left:
-                                        traci.vehicle.changeLane(veh, target_lane, 0.1)
+
+                            if self.free_lanes: 
+                                if len(self.incident_edge_lanes) == self.upstream_edges_n_lanes_dict[edge]: # Note this is only implemented if the junction is 1-to-1
+                                    dist_to_free_lane = np.min(np.abs(lane - np.array(self.free_lanes)))
+                                    if 0 < dist_to_edge_end < self.upstream_lc_prob_zone * dist_to_free_lane:
+                                        target_lane = min(self.free_lanes, key=lambda x:abs(x-traci.vehicle.getLaneIndex(veh)))
+                                        frac_of_prob_zone_left = (dist_to_edge_end - self.pos) / (self.lc_prob_zone - self.lc_zone)
+                                        if np.random.uniform() > frac_of_prob_zone_left:
+                                            traci.vehicle.changeLane(veh, target_lane, 0.1)
 
     def remove_speed_limit(self): #TODO make remove on upstream as well
         for lane in self.incident_edge_lanes:
