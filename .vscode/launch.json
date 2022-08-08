@@ -18,8 +18,7 @@
                 "debug_test",
                 "--verbose",
                 "--n_random_incidents",
-                "2",
-                "--do_counterfactuals",
+                "20",
                 "--incident_only"
             ]
         },

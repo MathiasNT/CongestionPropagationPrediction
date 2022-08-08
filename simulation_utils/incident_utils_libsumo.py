@@ -1,9 +1,7 @@
-#import traci
-
 import libsumo as traci
 import numpy as np
 import json
-
+import sumolib
 
 def np_encoder(object):
     if isinstance(object, np.generic):
@@ -20,7 +18,7 @@ class IncidentSettings():
         self.run_num = run_num
         self.is_incident = False
         self.is_random = is_random
-        self.random_seed = np.random.randint(2**32 - 1)
+        self.random_seed = np.random.randint(2**31 - 1)
         
         self.edge = None
         self.lanes = None
@@ -100,65 +98,172 @@ class IncidentSettings():
         return
 
 
-def block_lanes(incident_settings, step):
-    """Blocks lanes at the specified position and timesteps
+class SUMOIncident():
+    def __init__(self, incident_settings):
+        self.incident_edge = incident_settings.edge
+        self.lanes = incident_settings.lanes
+        self.pos = incident_settings.pos
+        self.start_step = incident_settings.start_step
+        self.duration = incident_settings.duration_time 
+        self.run_num = incident_settings.run_num
 
-    Args:
-        lane_pos_times (list of strings): A list of strings with format "{edge}_{lane}_{pos}_{time}_{duration}" that defines the blockages
-        step (int): Simulation step for time tracking
-        duration (int, optional): Duration of incidents. Defaults to 1200.
+        self.slow_zone = 70 
+        self.lc_zone = 20
+        self.lc_prob_zone = 170
+        self.slow_zone_speed = 1 # 13.8 is 50 km/h should work for highway situations.
 
-    Returns:
-        list of strings: A list of strings for blockages that have not started nor finished yet. 
-    """
+        # These are set in the traci init
+        self.incident_edge_lanes = None        
+        self.free_lanes = None
+        self.upstream_edges = None
+        self.upstream_edges_length = None 
+        self.upstream_edges_n_lanes = None
+        self.upstream_slow_zone = None
+        self.upstream_lc_zone = None
+        self.upstream_lc_prob_zone = None
+        return
 
-    edge = incident_settings.edge
-    pos = incident_settings.pos
-    start_step = incident_settings.start_step
-    duration = incident_settings.duration_time # TODO double check if i want to run on time
-    run_num = incident_settings.run_num
+    def sim_incident(self, step):
+        self.slow_and_change_lanes(step)
+        if self.pos < np.max([self.slow_zone, self.lc_prob_zone]):
+            self.slow_and_change_upstream(step)
+        self.block_lanes(step)        
 
-    #TODO Update this for the new incident framework where a single incident have multiple blocked lanes
-    if step==start_step: # Create block if time, check for collisions first.
-        for lane in incident_settings.lanes:
-            incident_veh_id = f'incident_veh_{edge}_{lane}_{pos}'
-            incident_route_id = f"incident_route_{edge}_{lane}"
-            #Check for vehicles on the incident lane and remove them if necessary
-            on_edge = traci.lane.getLastStepVehicleIDs(f"{edge}_{lane}")
-            if on_edge:
-                veh_pos_on_edge = []
-                for veh in on_edge:
-                    veh_pos_on_edge.append(traci.vehicle.getLanePosition(veh))
-                print(f"step: {step}, lane: {edge}_{lane}, on edge: {on_edge}, pos: {veh_pos_on_edge}, incident pos: {pos}")
-                print((np.abs(veh_pos_on_edge - np.array(pos))))
-                if np.min(np.abs(veh_pos_on_edge - np.array(pos))) < 7:          # Checking the closest vehicle should be good enough
-                    prob_veh = on_edge[np.argmin(np.abs(veh_pos_on_edge - np.array(pos)))]
-                    print(f"{prob_veh} is too close, removing it")
-                    traci.vehicle.remove(prob_veh)
+    def block_lanes(self, step):
+        # Logic for maintaining blocked lanes
+        if step==self.start_step: # Create block if time, check for collisions first.
+            for lane in self.lanes:
+                incident_veh_id = f'incident_veh_{self.incident_edge}_{lane}_{self.pos}'
+                incident_route_id = f"incident_route_{self.incident_edge}_{lane}"
+                #Check for vehicles on the incident lane and remove them if necessary
+                on_edge = traci.lane.getLastStepVehicleIDs(f"{self.incident_edge}_{lane}")
+                if on_edge:
+                    veh_pos_on_edge = []
+                    for veh in on_edge:
+                        veh_pos_on_edge.append(traci.vehicle.getLanePosition(veh))
+                    print(f"step: {step}, lane: {self.incident_edge}_{lane}, on edge: {on_edge}, pos: {veh_pos_on_edge}, incident pos: {self.pos}")
+                    print((np.abs(veh_pos_on_edge - np.array(self.pos))))
+                    if np.min(np.abs(veh_pos_on_edge - np.array(self.pos))) < 7:          # Checking the closest vehicle should be good enough
+                        prob_veh = on_edge[np.argmin(np.abs(veh_pos_on_edge - np.array(self.pos)))]
+                        print(f"{prob_veh} is too close, removing it")
+                        traci.vehicle.remove(prob_veh)
 
-            # Create the incident blocking the lane
-            print(f"run {run_num} step {step} creating block {edge}_{lane}_{pos}_{start_step}")
-            traci.route.add(incident_route_id, [edge])
-            traci.vehicle.add(vehID=incident_veh_id, routeID=incident_route_id)
-            traci.vehicle.moveTo(vehID=incident_veh_id, laneID=f'{edge}_{lane}', position=int(pos)) # Note annoying difference in position or pos between libsum and traci
-            traci.vehicle.setSpeed(vehID=incident_veh_id, speed=0)
-            traci.vehicle.setLaneChangeMode(vehID=incident_veh_id, laneChangeMode=0) # Again an annoying difference between libSumo and traci
-    
-    elif step > start_step and (step-start_step)%100==0 and (step-start_step) < duration: # Starts moving block to avoid time out
-        for lane in incident_settings.lanes:
-            incident_veh_id = f'incident_veh_{edge}_{lane}_{pos}'
-            incident_route_id = f"incident_route_{edge}_{lane}_{pos}"
-            traci.vehicle.setSpeed(vehID=incident_veh_id, speed=0.101)
+                # Create the incident blocking the lane
+                print(f"run {self.run_num} step {step} creating block {self.incident_edge}_{lane}_{self.pos}_{self.start_step}")
+                traci.route.add(incident_route_id, [self.incident_edge])
+                traci.vehicle.add(vehID=incident_veh_id, routeID=incident_route_id, typeID='IC')
+                traci.vehicle.moveTo(vehID=incident_veh_id, laneID=f'{self.incident_edge}_{lane}', position=int(self.pos)) # Note annoying difference in position or pos between libsum and traci
+                traci.vehicle.setSpeed(vehID=incident_veh_id, speed=0)
+                traci.vehicle.setLaneChangeMode(vehID=incident_veh_id, laneChangeMode=0) # Again an annoying difference between libSumo and traci
+        
+        elif step > self.start_step and (step-self.start_step)%100==0 and (step-self.start_step) < self.duration: # Starts moving block to avoid time out
+            for lane in self.lanes:
+                incident_veh_id = f'incident_veh_{self.incident_edge}_{lane}_{self.pos}'
+                incident_route_id = f"incident_route_{self.incident_edge}_{lane}_{self.pos}"
+                traci.vehicle.setSpeed(vehID=incident_veh_id, speed=0.101)
 
-    elif step > start_step and (step-start_step)%102==0 and (step-start_step) < duration: # Stops moving block
-        for lane in incident_settings.lanes:
-            incident_veh_id = f'incident_veh_{edge}_{lane}_{pos}'
-            incident_route_id = f"incident_route_{edge}_{lane}_{pos}"
-            traci.vehicle.setSpeed(vehID=incident_veh_id, speed=0)
+        elif step > self.start_step and (step-self.start_step)%102==0 and (step-self.start_step) < self.duration: # Stops moving block
+            for lane in self.lanes:
+                incident_veh_id = f'incident_veh_{self.incident_edge}_{lane}_{self.pos}'
+                incident_route_id = f"incident_route_{self.incident_edge}_{lane}_{self.pos}"
+                traci.vehicle.setSpeed(vehID=incident_veh_id, speed=0)
 
-    elif step==(start_step+duration): # Removes block
-        for lane in incident_settings.lanes:
-            incident_veh_id = f'incident_veh_{edge}_{lane}_{pos}'
-            print(f"run {run_num} step {step} removing block {lane}_{pos}_{start_step}")
-            traci.vehicle.remove(vehID=incident_veh_id)
-    return 
+        elif step==(self.start_step+self.duration): # Removes block
+            for lane in self.lanes:
+                incident_veh_id = f'incident_veh_{self.incident_edge}_{lane}_{self.pos}'
+                print(f"run {self.run_num} step {step} removing block {lane}_{self.pos}_{self.start_step}")
+                traci.vehicle.remove(vehID=incident_veh_id)
+                self.remove_speed_limit()
+        return
+
+    def slow_and_change_lanes(self, step):
+        # Logic for slowing down traffic around incident
+        if step >= self.start_step and step <= (self.start_step + self.duration):
+            for lane in self.incident_edge_lanes:
+                on_edge = traci.lane.getLastStepVehicleIDs(f"{self.incident_edge}_{lane}")
+                cars_on_edge = [car for car in on_edge if 'incident' not in car]
+                if cars_on_edge:
+                    for veh in cars_on_edge:
+                        veh_pos_on_edge = traci.vehicle.getLanePosition(veh)
+                        dist_to_incident =  self.pos - veh_pos_on_edge
+                        if 0 < dist_to_incident < self.slow_zone:
+                            traci.vehicle.setMaxSpeed(veh, self.slow_zone_speed)
+                        
+                        if self.free_lanes:
+                            dist_to_free_lane = np.min(np.abs(lane - np.array(self.free_lanes)))
+                            if 0 < dist_to_incident < self.lc_prob_zone * dist_to_free_lane:
+                                target_lane = min(self.free_lanes, key=lambda x:abs(x-traci.vehicle.getLaneIndex(veh)))
+                                frac_of_prob_zone_left = dist_to_incident / (self.lc_prob_zone - self.lc_zone)
+                                if np.random.uniform() > frac_of_prob_zone_left:
+                                    traci.vehicle.changeLane(veh, target_lane, 0.1)
+                            
+                        if veh_pos_on_edge > self.pos:
+                            veh_class = traci.vehicle.getVehicleClass(veh)
+                            if veh_class == 'passenger':
+                                traci.vehicle.setMaxSpeed(veh, 55.55) # 55.55 is default SUMO settings, so should be ok
+                            elif veh_class == 'truck':
+                                traci.vehicle.setMaxSpeed(veh, 36.11) # 55.55 is default SUMO settings, so should be ok
+
+    def slow_and_change_upstream(self, step):
+        for edge in self.upstream_edges:
+            if step >= self.start_step and step <= (self.start_step + self.duration):
+                for lane in range(self.upstream_edges_n_lanes_dict[edge]):
+                    on_edge = traci.lane.getLastStepVehicleIDs(f"{edge}_{lane}")
+                    cars_on_edge = [car for car in on_edge if 'incident' not in car]
+                    if cars_on_edge:
+                        for veh in cars_on_edge:
+                            veh_pos_on_edge = traci.vehicle.getLanePosition(veh)
+                            dist_to_edge_end =  self.upstream_edges_length_dict[edge] - veh_pos_on_edge
+                            if dist_to_edge_end < self.upstream_slow_zone:
+                                traci.vehicle.setMaxSpeed(veh, self.slow_zone_speed)
+                         
+                            if self.free_lanes:
+                                if len(self.incident_edge_lanes) == self.upstream_edges_n_lanes_dict[edge]: # Note this is only implemented if the junction is 1-to-1
+                                    dist_to_free_lane = np.min(np.abs(lane - np.array(self.free_lanes)))
+                                    if 0 < dist_to_edge_end < self.upstream_lc_prob_zone * dist_to_free_lane:
+                                        target_lane = min(self.free_lanes, key=lambda x:abs(x-traci.vehicle.getLaneIndex(veh)))
+                                        frac_of_prob_zone_left = (dist_to_edge_end - self.pos) / (self.lc_prob_zone - self.lc_zone)
+                                        if np.random.uniform() > frac_of_prob_zone_left:
+                                            traci.vehicle.changeLane(veh, target_lane, 0.1)
+
+    def remove_speed_limit(self): #TODO make remove on upstream as well
+        for lane in self.incident_edge_lanes:
+            on_edge = traci.lane.getLastStepVehicleIDs(f"{self.incident_edge}_{lane}")
+            cars_on_edge = [car for car in on_edge if 'incident' not in car]
+            for veh in cars_on_edge:
+                veh_class = traci.vehicle.getVehicleClass(veh)
+                if veh_class == 'passenger':
+                    traci.vehicle.setMaxSpeed(veh, 55.55) # 55.55 is default SUMO settings, so should be ok
+                elif veh_class == 'truck':
+                    traci.vehicle.setMaxSpeed(veh, 36.11) # 55.55 is default SUMO settings, so should be ok
+        
+        if self.pos < np.max([self.slow_zone, self.lc_prob_zone]):
+            for edge in self.upstream_edges:
+                for lane in range(self.upstream_edges_n_lanes_dict[edge]):
+                    on_edge = traci.lane.getLastStepVehicleIDs(f"{edge}_{lane}")
+                    cars_on_edge = [car for car in on_edge if 'incident' not in car]
+                    for veh in cars_on_edge:
+                        veh_class = traci.vehicle.getVehicleClass(veh)
+                        if veh_class == 'passenger':
+                            traci.vehicle.setMaxSpeed(veh, 55.55) # 55.55 is default SUMO settings, so should be ok
+                        elif veh_class == 'truck':
+                            traci.vehicle.setMaxSpeed(veh, 36.11) # 55.55 is default SUMO settings, so should be ok
+
+
+    def traci_init(self, scenario_folder):
+        self.incident_edge_lanes = list(range(traci.edge.getLaneNumber(self.incident_edge))) #TODO move to class
+        self.free_lanes = list(set(self.incident_edge_lanes) - set(self.lanes)) # TODO move to class
+        self.calulate_slow_zone(scenario_folder)
+
+    def calulate_slow_zone(self, scenario_folder):
+        net_path = f'{scenario_folder}/Simulations/Base/network.net.xml'
+        net = sumolib.net.readNet(net_path)
+        i_edge_obj = net.getEdge(self.incident_edge)
+        upstream_edges_obj = list(i_edge_obj.getIncoming().keys())
+        self.upstream_edges = [edge_obj.getID() for edge_obj in upstream_edges_obj]
+        self.upstream_edges_length_dict = {edge_obj.getID():edge_obj.getLength() for edge_obj in upstream_edges_obj} 
+        self.upstream_edges_n_lanes_dict = {edge_obj.getID():edge_obj.getLaneNumber() for edge_obj in upstream_edges_obj}
+        self.upstream_slow_zone = np.abs(self.slow_zone - self.pos)
+        self.upstream_lc_zone = np.abs(self.lc_zone - self.pos) 
+        self.upstream_lc_prob_zone = np.abs(self.lc_prob_zone - self.pos) 
+        return
