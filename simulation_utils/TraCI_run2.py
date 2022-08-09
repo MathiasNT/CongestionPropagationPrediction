@@ -110,11 +110,11 @@ if __name__ == "__main__":
     #)
     ###########################
 
-    simulation_start_time = 0
-    simulation_end_time = 84000
+    #simulation_start_time = 0
+    #simulation_end_time = 84000
 
-    #simulation_start_time = (incident_settings.start_time - simulation_warmup_time)
-    #simulation_end_time = (simulation_start_time + incident_settings.duration_time + simulation_congestion_time)
+    simulation_start_time = (incident_settings.start_time - simulation_warmup_time)
+    simulation_end_time = (simulation_start_time + incident_settings.duration_time + simulation_congestion_time)
 
     sim_settings = setup_gui_sim(scenario_folder=scenario_folder,
                       begin=simulation_start_time,
