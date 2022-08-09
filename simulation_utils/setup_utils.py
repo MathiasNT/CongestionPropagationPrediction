@@ -12,7 +12,7 @@ def setup_incident_sim(scenario_folder, simulation_name, run_num, begin, end, tr
         simulation_folder = f'{scenario_folder}/Results/{simulation_name}_{sim_num}'
     os.mkdir(simulation_folder)
     edge_file = f'{simulation_folder}/edgedata.xml'
-    trips_file = f'{simulation_folder}/tripsdata.xml'    
+    #trips_file = f'{simulation_folder}/tripsdata.xml'    
 
     # Create temp add file
     add_path = f'{scenario_folder}/Simulations/Base/edgedata'
@@ -44,7 +44,7 @@ def setup_incident_sim(scenario_folder, simulation_name, run_num, begin, end, tr
         sumoCmd = sumoCmd + ['--error-log', f'{simulation_folder}/error_log.xml']
         sumoCmd = sumoCmd + ['--message-log', f'{simulation_folder}/message_log.xml']
 
-    return {'sumoCmd':sumoCmd, 'simulation_folder':simulation_folder}
+    return {'sumoCmd':sumoCmd, 'simulation_folder':simulation_folder, 'scenario_folder': scenario_folder}
 
 def setup_counterfactual_sim(scenario_folder, simulation_folder, run_num, begin, end, trip_info, verbose):
     # Create simulation folder and results filenames

@@ -9,7 +9,7 @@ import libsumo as traci
 from time import time
 from multiprocessing import Process
 
-from incident_utils_libsumo import block_lanes, IncidentSettings, create_counterfactual
+from incident_utils_libsumo import IncidentSettings, SUMOIncident, create_counterfactual
 from setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
 
 if 'SUMO_HOME' in os.environ:
@@ -54,11 +54,15 @@ def run(simulation_settings, start_time, end_time, incident_settings):
     if incident_settings.is_random:
         incident_settings.random()
 
+    if incident_settings.is_incident:
+        sumo_incident = SUMOIncident(incident_settings=incident_settings)
+        sumo_incident.traci_init(simulation_settings['scenario_folder'])
+
     incident_settings.save_incident_information(simulation_settings['simulation_folder'])
 
     while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() <= end_time:
         if incident_settings.is_incident:
-            block_lanes(incident_settings, step)
+           sumo_incident.sim_incident(step)
 
         #print(f'step {step}, my time {sim_time}, true sim time {traci.simulation.getTime()}')
 
