@@ -2,40 +2,39 @@
 
 <!-- generated on 2022-08-04 17:23:43 by Eclipse SUMO netedit Version 1.14.0
 -->
-
 <additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
     <!-- Detectors -->
-    <e1Detector id="e1_E0_2" lane="E0_2" pos="74.13" period="300.00" file="e1_E0_2.xml"/>
-    <e1Detector id="e1_E0_1" lane="E0_1" pos="74.13" period="300.00" file="e1_E0_1.xml"/>
-    <e1Detector id="e1_E0_0" lane="E0_0" pos="74.13" period="300.00" file="e1_E0_0.xml"/>
-    <e1Detector id="e1_E1_2" lane="E1_2" pos="90.61" period="300.00" file="e1_E1_2.xml"/>
-    <e1Detector id="e1_E1_1" lane="E1_1" pos="90.61" period="300.00" file="e1_E1_1.xml"/>
-    <e1Detector id="e1_E1_0" lane="E1_0" pos="90.61" period="300.00" file="e1_E1_0.xml"/>
-    <e1Detector id="e1_E2_2" lane="E2_2" pos="37.26" period="300.00" file="e1_E2_2.xml"/>
-    <e1Detector id="e1_E2_1" lane="E2_1" pos="37.26" period="300.00" file="e1_E2_1.xml"/>
-    <e1Detector id="e1_E2_0" lane="E2_0" pos="37.26" period="300.00" file="e1_E2_0.xml"/>
-    <e1Detector id="e1_E3_2" lane="E3_2" pos="29.36" period="300.00" file="e1_E3_2.xml"/>
-    <e1Detector id="e1_E3_1" lane="E3_1" pos="29.36" period="300.00" file="e1_E3_1.xml"/>
-    <e1Detector id="e1_E3_0" lane="E3_0" pos="29.36" period="300.00" file="e1_E3_0.xml"/>
-    <e1Detector id="e1_E4_2" lane="E4_2" pos="35.01" period="300.00" file="e1_E4_2.xml"/>
-    <e1Detector id="e1_E4_1" lane="E4_1" pos="35.01" period="300.00" file="e1_E4_1.xml"/>
-    <e1Detector id="e1_E4_0" lane="E4_0" pos="35.01" period="300.00" file="e1_E4_0.xml"/>
-    <e1Detector id="e1_E5_2" lane="E5_2" pos="103.03" period="300.00" file="e1_E5_2.xml"/>
-    <e1Detector id="e1_E5_1" lane="E5_1" pos="103.03" period="300.00" file="e1_E5_1.xml"/>
-    <e1Detector id="e1_E5_0" lane="E5_0" pos="103.03" period="300.00" file="e1_E5_0.xml"/>
-    <e1Detector id="e1_E6_2" lane="E6_2" pos="41.29" period="300.00" file="e1_E6_2.xml"/>
-    <e1Detector id="e1_E6_1" lane="E6_1" pos="41.29" period="300.00" file="e1_E6_1.xml"/>
-    <e1Detector id="e1_E6_0" lane="E6_0" pos="41.29" period="300.00" file="e1_E6_0.xml"/>
-    <e1Detector id="e1_E8_2" lane="E8_2" pos="51.36" period="300.00" file="e1_E8_2.xml"/>
-    <e1Detector id="e1_E8_1" lane="E8_1" pos="51.36" period="300.00" file="e1_E8_1.xml"/>
-    <e1Detector id="e1_E8_0" lane="E8_0" pos="51.36" period="300.00" file="e1_E8_0.xml"/>
-    <e1Detector id="e1_E9_2" lane="E9_2" pos="31.57" period="300.00" file="e1_E9_2.xml"/>
-    <e1Detector id="e1_E9_1" lane="E9_1" pos="31.57" period="300.00" file="e1_E9_1.xml"/>
-    <e1Detector id="e1_E9_0" lane="E9_0" pos="31.57" period="300.00" file="e1_E9_0.xml"/>
-    <e1Detector id="e1_E10_2" lane="E10_2" pos="30.97" period="300.00" file="e1_E10_2.xml"/>
-    <e1Detector id="e1_E10_1" lane="E10_1" pos="30.97" period="300.00" file="e1_E10_1.xml"/>
-    <e1Detector id="e1_E10_0" lane="E10_0" pos="30.97" period="300.00" file="e1_E10_0.xml"/>
-    <e1Detector id="e1_E11_2" lane="E11_2" pos="53.96" period="300.00" file="e1_E11_2.xml"/>
-    <e1Detector id="e1_E11_1" lane="E11_1" pos="53.96" period="300.00" file="e1_E11_1.xml"/>
-    <e1Detector id="e1_E11_0" lane="E11_0" pos="53.96" period="300.00" file="e1_E11_0.xml"/>
+    <e1Detector id="e1_E0_2" lane="E0_2" pos="74.13" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E0_1" lane="E0_1" pos="74.13" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E0_0" lane="E0_0" pos="74.13" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E1_2" lane="E1_2" pos="90.61" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E1_1" lane="E1_1" pos="90.61" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E1_0" lane="E1_0" pos="90.61" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E2_2" lane="E2_2" pos="37.26" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E2_1" lane="E2_1" pos="37.26" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E2_0" lane="E2_0" pos="37.26" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E3_2" lane="E3_2" pos="29.36" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E3_1" lane="E3_1" pos="29.36" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E3_0" lane="E3_0" pos="29.36" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E4_2" lane="E4_2" pos="35.01" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E4_1" lane="E4_1" pos="35.01" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E4_0" lane="E4_0" pos="35.01" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E5_2" lane="E5_2" pos="103.03" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E5_1" lane="E5_1" pos="103.03" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E5_0" lane="E5_0" pos="103.03" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E6_2" lane="E6_2" pos="41.29" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E6_1" lane="E6_1" pos="41.29" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E6_0" lane="E6_0" pos="41.29" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E8_2" lane="E8_2" pos="51.36" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E8_1" lane="E8_1" pos="51.36" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E8_0" lane="E8_0" pos="51.36" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E9_2" lane="E9_2" pos="31.57" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E9_1" lane="E9_1" pos="31.57" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E9_0" lane="E9_0" pos="31.57" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E10_2" lane="E10_2" pos="30.97" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E10_1" lane="E10_1" pos="30.97" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E10_0" lane="E10_0" pos="30.97" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E11_2" lane="E11_2" pos="53.96" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E11_1" lane="E11_1" pos="53.96" period="300.00" file="detector_data.xml"/>
+    <e1Detector id="e1_E11_0" lane="E11_0" pos="53.96" period="300.00" file="detector_data.xml"/>
 </additional>
