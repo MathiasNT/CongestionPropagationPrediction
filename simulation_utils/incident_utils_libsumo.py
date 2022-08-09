@@ -81,6 +81,8 @@ class IncidentSettings():
 
     def random_time(self):
         self.start_time = np.rint(np.random.uniform(0, 84000)).astype(int)
+        if self.start_time < 3600:
+            self.start_time = 3600 # We need warmup for the simulator to run properly
         self.start_step = self.start_time * 2
         return
 
@@ -171,7 +173,7 @@ class SUMOIncident():
         elif step==(self.start_step+self.duration): # Removes block
             for lane in self.lanes:
                 incident_veh_id = f'incident_veh_{self.incident_edge}_{lane}_{self.pos}'
-                print(f"run {self.run_num} step {step} removing block {lane}_{self.pos}_{self.start_step}")
+                print(f"run {self.run_num} step {step} removing block {self.incident_edge}_{lane}_{self.pos}_{self.start_step}")
                 traci.vehicle.remove(vehID=incident_veh_id)
                 self.remove_speed_limit()
         return

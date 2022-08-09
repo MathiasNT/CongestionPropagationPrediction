@@ -45,6 +45,11 @@ def get_args():
 
 # contrains Traci control loop
 def run(simulation_settings, start_time, end_time, incident_settings):
+    #TODO this only redirect the print statements. SUMO warnings are a WIP, see https://github.com/eclipse/sumo/issues/10344
+    sys.stdout = open(f"{simulation_settings['simulation_folder']}/log.out", 'w')
+    sys.stderr = open(f"{simulation_settings['simulation_folder']}/log.err", 'w')
+
+
     start_wtime = time()
     sim_time = start_time
     step = start_time * 2

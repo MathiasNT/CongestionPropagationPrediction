@@ -18,8 +18,8 @@
                 "debug_test",
                 "--verbose",
                 "--n_random_incidents",
-                "20",
-                "--incident_only"
+                "1000",
+                "--incident_only",
             ]
         },
         {
