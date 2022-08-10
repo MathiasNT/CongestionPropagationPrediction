@@ -13,12 +13,12 @@
             "justMyCode": true,
             "args": [
                 "--scenario",
-                "experiment",
+                "motorway",
                 "--simulation_name",
                 "debug_test",
                 "--verbose",
                 "--n_random_incidents",
-                "100",
+                "10",
                 "--incident_only",
                 "--do_counterfactuals"
             ]

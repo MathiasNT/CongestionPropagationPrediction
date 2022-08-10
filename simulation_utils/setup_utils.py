@@ -47,7 +47,7 @@ def setup_incident_sim(scenario_folder, simulation_name, run_num, begin, end, tr
     add_elem.set('value', f'{old_add_files},edgedata_temp{run_num}.add.xml,detectors_temp{run_num}.add.xml')
     xml_tree.write(config_temp)
 
-    sumoCmd = [checkBinary('sumo'), "-c", config_temp, "--begin", f"{begin}", "--end", f"{end}"]
+    sumoCmd = [checkBinary('sumo'), "-c", config_temp, "--begin", f"{begin}", "--end", f"{end}", "--no-warnings"]
     
     if trip_info:
         sumoCmd = sumoCmd + ['--tripinfo-output', f'{simulation_folder}/trips.xml']
@@ -97,7 +97,7 @@ def setup_counterfactual_sim(scenario_folder, simulation_folder, run_num, begin,
     add_elem.set('value', f'{old_add_files},edgedata_temp{run_num}_counterfactual.add.xml, detectors_temp{run_num}_counterfactual.add.xml')
     xml_tree.write(config_temp)
 
-    sumoCmd = [checkBinary('sumo'), "-c", config_temp, "--begin", f"{begin}", "--end", f"{end}"]
+    sumoCmd = [checkBinary('sumo'), "-c", config_temp, "--begin", f"{begin}", "--end", f"{end}", "--no-warnings"]
     
     if trip_info:
         sumoCmd = sumoCmd + ['--tripinfo-output', f'{simulation_folder}/trips_counterfactual.xml']
@@ -113,7 +113,7 @@ def setup_gui_sim(scenario_folder, begin, end):
     # Create temp config file
     config_path = f'{scenario_folder}/Simulations/Base/simulation.sumo.cfg'
 
-    sumoCmd = [checkBinary('sumo-gui'), "-c", config_path, "--begin", f"{begin}", "--end", f"{end}"]
+    sumoCmd = [checkBinary('sumo-gui'), "-c", config_path, "--begin", f"{begin}", "--end", f"{end}", "--no-warnings"]
 
     return {'sumoCmd':sumoCmd, 'simulation_folder':'temp', 'scenario_folder':scenario_folder}
 
