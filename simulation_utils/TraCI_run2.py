@@ -86,28 +86,28 @@ if __name__ == "__main__":
     
     # python .\traci_run.py --scenario urban --gui --begin 50000
     #incidents = ['360313821_0_50_50500_1200','360313821_1_50_50500_1200','360313821_2_50_50500_1200'] # Shows the need for rerouting
-    scenario = 'experiment'
+    scenario = 'motorway'
     scenario_folder = f'C:/Users/mnity/Desktop/quick_adap_to_incidents/{scenario}'
     
     incident_settings = IncidentSettings(run_num=0)
     
-    incident_settings.set_incident(
-        edge='E1',
-        lanes=[0,1,2],
-        pos=5,
-        start_time=100,
-        duration=1140,
-        is_incident=True,
-    )
-
     #incident_settings.set_incident(
-        #edge='360361373',
-        #lanes=[0,1],
-        #pos=358.1722741760613,
-        #start_time=67208,
+        #edge='E1',
+        #lanes=[0,1,2],
+        #pos=5,
+        #start_time=100,
         #duration=1140,
         #is_incident=True,
     #)
+
+    incident_settings.set_incident(
+        edge='360361373',
+        lanes=[0,1],
+        pos=358.1722741760613,
+        start_time=67208,
+        duration=1140,
+        is_incident=True,
+    )
     ###########################
 
     #simulation_start_time = 0
