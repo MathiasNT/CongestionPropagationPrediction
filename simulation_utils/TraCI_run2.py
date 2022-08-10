@@ -1,4 +1,3 @@
-#TODO Implement naming for results for parallel runs
 
 import os
 from shutil import ExecError
