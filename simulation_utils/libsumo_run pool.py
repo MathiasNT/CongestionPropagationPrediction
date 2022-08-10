@@ -5,10 +5,12 @@ import argparse
 from sumolib import checkBinary # For some reason this import fixes problems with importing libsumo.
 import libsumo as traci
 from time import time
-from multiprocessing import Process
+from multiprocessing import Pool
+import tqdm
 
 from incident_utils_libsumo import IncidentSettings, SUMOIncident, create_counterfactual
 from setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
+import istarmap
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -121,9 +123,9 @@ if __name__ == "__main__":
 
 
     sim_settings = []
-    processes = []
+    jobs = []
     counterfactual_sim_settings = []
-    counterfactual_processes = []
+    counterfactual_jobs = []
 
     # Create and start all sims
     for run_num in range(0, n_runs):
@@ -146,14 +148,7 @@ if __name__ == "__main__":
             )
         )
         
-        processes.append(
-            Process(target=run,
-                    args=(sim_settings[run_num], simulation_start_time, simulation_end_time, incident_settings[run_num])
-            )
-        )
-
-        print(f'Starting run {run_num} at time {simulation_start_time}. Running until {simulation_end_time}')
-        processes[run_num].start()
+        jobs.append([sim_settings[run_num], simulation_start_time, simulation_end_time, incident_settings[run_num]])
 
         if args.do_counterfactuals:
             counterfactual_sim_settings.append(
@@ -168,22 +163,12 @@ if __name__ == "__main__":
                 )
             )
 
-            counterfactual_processes.append(
-                Process(target=run,
-                        args=(counterfactual_sim_settings[run_num], simulation_start_time, simulation_end_time, counterfactual_settings[run_num])
-                )
-            )
+            counterfactual_jobs.append((counterfactual_sim_settings[run_num], simulation_start_time, simulation_end_time, counterfactual_settings[run_num]))
 
-            print(f'Starting counterfactual {run_num} at time {simulation_start_time}. Running until {simulation_end_time}')
-            counterfactual_processes[run_num].start()
-            
-
-    # Wait for all sims to terminate
-    for process in processes:
-        process.join()
-
-    if args.do_counterfactuals:
-        for process in counterfactual_processes:
-            process.join()
+    
+    with Pool(os.cpu_count() - 4) as pool:
+        for _ in tqdm.tqdm(pool.istarmap(run, jobs),
+                           total=len(jobs)):
+            pass
 
     cleanup_temp_files(scenario_folder=scenario_folder)

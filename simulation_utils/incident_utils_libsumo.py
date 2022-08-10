@@ -62,7 +62,7 @@ class IncidentSettings():
         self.is_incident = True
 
     def random_edge(self):
-        # TODO could use lane.getMaxSpeed to select only highway edges
+        # TODO Do we want more specific edges?
         object_list = traci.edge.getIDList() 
         edge_list = [edge for edge in object_list if not edge.startswith(':')] # Remove junctions
         self.edge = np.random.choice(edge_list)
@@ -96,7 +96,6 @@ class IncidentSettings():
             json_str = json.dumps(self.__dict__, default=np_encoder)
             file = open(f'{folder_path}/incident_settings.json', 'w+') 
             file.write(json_str)
-            #TODO Figure out if I want more information
         return
 
 
@@ -228,7 +227,7 @@ class SUMOIncident():
                                         if np.random.uniform() > frac_of_prob_zone_left:
                                             traci.vehicle.changeLane(veh, target_lane, 0.1)
 
-    def remove_speed_limit(self): #TODO make remove on upstream as well
+    def remove_speed_limit(self):
         for lane in self.incident_edge_lanes:
             on_edge = traci.lane.getLastStepVehicleIDs(f"{self.incident_edge}_{lane}")
             cars_on_edge = [car for car in on_edge if 'incident' not in car]
@@ -253,8 +252,8 @@ class SUMOIncident():
 
 
     def traci_init(self, scenario_folder):
-        self.incident_edge_lanes = list(range(traci.edge.getLaneNumber(self.incident_edge))) #TODO move to class
-        self.free_lanes = list(set(self.incident_edge_lanes) - set(self.lanes)) # TODO move to class
+        self.incident_edge_lanes = list(range(traci.edge.getLaneNumber(self.incident_edge)))
+        self.free_lanes = list(set(self.incident_edge_lanes) - set(self.lanes))
         self.calulate_slow_zone(scenario_folder)
 
     def calulate_slow_zone(self, scenario_folder):
