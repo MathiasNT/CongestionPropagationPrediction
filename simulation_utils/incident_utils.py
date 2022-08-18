@@ -1,8 +1,16 @@
 #TODO see todos from libsumo version
-import traci
 import numpy as np
 import json
 import sumolib
+import os
+import sys
+
+if os.environ['OS'].startswith('Windows'):
+    import traci
+    con_lib = 'traci'
+else:
+    import libsumo as traci
+    con_lib = 'libsumo'
 
 def np_encoder(object):
     if isinstance(object, np.generic):
@@ -102,13 +110,13 @@ class SUMOIncident():
         self.lanes = incident_settings.lanes
         self.pos = incident_settings.pos
         self.start_step = incident_settings.start_step
-        self.duration = incident_settings.duration_time 
+        self.duration_steps = incident_settings.duration_steps 
         self.run_num = incident_settings.run_num
 
         self.slow_zone = 70 
         self.lc_zone = 20
         self.lc_prob_zone = 170
-        self.slow_zone_speed = 1 # 13.8 is 50 km/h should work for highway situations.
+        self.slow_zone_speed = 5 # 13.8 is 50 km/h should work for highway situations.
 
         # These are set in the traci init
         self.incident_edge_lanes = None        
@@ -119,13 +127,17 @@ class SUMOIncident():
         self.upstream_slow_zone = None
         self.upstream_lc_zone = None
         self.upstream_lc_prob_zone = None
+
+        self.last_rerouted_cars = []
         return
 
-    def sim_incident(self, step):
+    def sim_incident(self, step, reroute=False):
         self.slow_and_change_lanes(step)
         if self.pos < np.max([self.slow_zone, self.lc_prob_zone]):
             self.slow_and_change_upstream(step)
         self.block_lanes(step)        
+        if reroute:
+            self.reroute_upstream(step)
 
     def block_lanes(self, step):
         # Logic for maintaining blocked lanes
@@ -148,25 +160,25 @@ class SUMOIncident():
 
                 # Create the incident blocking the lane
                 print(f"run {self.run_num} step {step} creating block {self.incident_edge}_{lane}_{self.pos}_{self.start_step}")
-                traci.route.add(incident_route_id, [self.incident_edge])
+                traci.route.add(incident_route_id, [self.incident_edge, self.downstream_edges[0]])
                 traci.vehicle.add(vehID=incident_veh_id, routeID=incident_route_id, typeID='IC')
                 traci.vehicle.moveTo(vehID=incident_veh_id, laneID=f'{self.incident_edge}_{lane}', pos=int(self.pos)) # Note annoying difference in position or pos between libsum and traci
                 traci.vehicle.setSpeed(vehID=incident_veh_id, speed=0)
                 traci.vehicle.setLaneChangeMode(vehID=incident_veh_id, lcm=0) # Again an annoying difference between libSumo and traci
         
-        elif step > self.start_step and (step-self.start_step)%100==0 and (step-self.start_step) < self.duration: # Starts moving block to avoid time out
+        elif step > self.start_step and (step-self.start_step)%100==0 and (step-self.start_step) < self.duration_steps: # Starts moving block to avoid time out
             for lane in self.lanes:
                 incident_veh_id = f'incident_veh_{self.incident_edge}_{lane}_{self.pos}'
                 incident_route_id = f"incident_route_{self.incident_edge}_{lane}_{self.pos}"
                 traci.vehicle.setSpeed(vehID=incident_veh_id, speed=0.101)
 
-        elif step > self.start_step and (step-self.start_step)%102==0 and (step-self.start_step) < self.duration: # Stops moving block
+        elif step > self.start_step and (step-self.start_step)%102==0 and (step-self.start_step) < self.duration_steps: # Stops moving block
             for lane in self.lanes:
                 incident_veh_id = f'incident_veh_{self.incident_edge}_{lane}_{self.pos}'
                 incident_route_id = f"incident_route_{self.incident_edge}_{lane}_{self.pos}"
                 traci.vehicle.setSpeed(vehID=incident_veh_id, speed=0)
 
-        elif step==(self.start_step+self.duration): # Removes block
+        elif step==(self.start_step+self.duration_steps): # Removes block
             for lane in self.lanes:
                 incident_veh_id = f'incident_veh_{self.incident_edge}_{lane}_{self.pos}'
                 print(f"run {self.run_num} step {step} removing block {lane}_{self.pos}_{self.start_step}")
@@ -176,7 +188,7 @@ class SUMOIncident():
 
     def slow_and_change_lanes(self, step):
         # Logic for slowing down traffic around incident
-        if step >= self.start_step and step <= (self.start_step + self.duration):
+        if step >= self.start_step and step <= (self.start_step + self.duration_steps):
             for lane in self.incident_edge_lanes:
                 on_edge = traci.lane.getLastStepVehicleIDs(f"{self.incident_edge}_{lane}")
                 cars_on_edge = [car for car in on_edge if 'incident' not in car]
@@ -204,7 +216,7 @@ class SUMOIncident():
 
     def slow_and_change_upstream(self, step):
         for edge in self.upstream_edges:
-            if step >= self.start_step and step <= (self.start_step + self.duration):
+            if step >= self.start_step and step <= (self.start_step + self.duration_steps):
                 for lane in range(self.upstream_edges_n_lanes_dict[edge]):
                     on_edge = traci.lane.getLastStepVehicleIDs(f"{edge}_{lane}")
                     cars_on_edge = [car for car in on_edge if 'incident' not in car]
@@ -247,6 +259,30 @@ class SUMOIncident():
                         elif veh_class == 'truck':
                             traci.vehicle.setMaxSpeed(veh, 36.11) # 55.55 is default SUMO settings, so should be ok
 
+    def reroute_upstream(self, step):
+        if step >= self.start_step and step <= (self.start_step + self.duration_steps):
+            upstream_cars = []
+            for edge in self.upstream_edges:
+                for lane in range(self.upstream_edges_n_lanes_dict[edge]):
+                    on_edge = traci.lane.getLastStepVehicleIDs(f"{edge}_{lane}")
+                    if on_edge:
+                        upstream_cars = upstream_cars + list(on_edge)
+            
+            for car in upstream_cars:
+                traci.vehicle.rerouteTraveltime(car, currentTravelTimes=True)
+
+            fully_rerouted_cars = list(set(self.last_rerouted_cars) - set(upstream_cars))
+            self.remove_speed_limit_reroute(fully_rerouted_cars)
+            
+            self.last_rerouted_cars = upstream_cars
+
+    def remove_speed_limit_reroute(self, rerouted_cars):
+        for veh in rerouted_cars:
+            veh_class = traci.vehicle.getVehicleClass(veh)
+            if veh_class == 'passenger':
+                traci.vehicle.setMaxSpeed(veh, 55.55) # 55.55 is default SUMO settings, so should be ok
+            elif veh_class == 'truck':
+                traci.vehicle.setMaxSpeed(veh, 36.11) # 55.55 is default SUMO settings, so should be ok
 
     def traci_init(self, scenario_folder):
         self.incident_edge_lanes = list(range(traci.edge.getLaneNumber(self.incident_edge)))
@@ -264,4 +300,7 @@ class SUMOIncident():
         self.upstream_slow_zone = np.abs(self.slow_zone - self.pos)
         self.upstream_lc_zone = np.abs(self.lc_zone - self.pos) 
         self.upstream_lc_prob_zone = np.abs(self.lc_prob_zone - self.pos) 
+            
+        downstream_edges_obj = list(i_edge_obj.getOutgoing().keys())
+        self.downstream_edges = [edge_obj.getID() for edge_obj in downstream_edges_obj]
         return

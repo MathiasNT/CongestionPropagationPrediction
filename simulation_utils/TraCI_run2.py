@@ -8,7 +8,7 @@ import traci
 from time import time
 from multiprocessing import Process
 
-from incident_utils_traci import IncidentSettings, SUMOIncident 
+from incident_utils import IncidentSettings, SUMOIncident 
 from setup_utils import setup_gui_sim, cleanup_temp_files
 
 if 'SUMO_HOME' in os.environ:
@@ -45,7 +45,7 @@ def run(simulation_settings, start_time, end_time, incident_settings):
 
     while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() <= end_time:
         if incident_settings.is_incident:
-           sumo_incident.sim_incident(step) 
+           sumo_incident.sim_incident(step, reroute=True) 
 
         #print(f'step {step}, my time {sim_time}, true sim time {traci.simulation.getTime()}')
 
@@ -89,24 +89,57 @@ if __name__ == "__main__":
     scenario_folder = f'C:/Users/mnity/Desktop/quick_adap_to_incidents/{scenario}'
     
     incident_settings = IncidentSettings(run_num=0)
-    
+
+    ## Experiment 
     #incident_settings.set_incident(
         #edge='E1',
-        #lanes=[0,1,2],
-        #pos=5,
+        #lanes=[0,1],
+        #pos=80,
         #start_time=100,
         #duration=1140,
         #is_incident=True,
     #)
 
+    ## Motorway
+    #incident_settings.set_incident(
+        #edge='360361373',
+        #lanes=[0,1,2],
+        #pos=358.1722741760613,
+        #start_time=67208,
+        #duration=1140,
+        #is_incident=True,
+    #)
+    
     incident_settings.set_incident(
-        edge='360361373',
-        lanes=[0,1],
-        pos=358.1722741760613,
-        start_time=67208,
-        duration=1140,
+        edge="208416643",
+        lanes=[0],
+        pos=8.349012655541417,
+        start_time=44356,
+        duration=1316,
         is_incident=True,
     )
+    
+    ## National
+    #incident_settings.set_incident(
+        #edge='123961236#1',
+        #lanes=[0,1,2],
+        #pos=358.1722741760613,
+        #start_time=67208,
+        #duration=1140,
+        #is_incident=True,
+    #)
+
+
+    ## Urban
+    #incident_settings.set_incident(
+        #edge='14327272#0',
+        #lanes=[0,1],
+        #pos=70,
+        #start_time=67208,
+        #duration=1140,
+        #is_incident=True,
+    #)
+
     ###########################
 
     #simulation_start_time = 0
