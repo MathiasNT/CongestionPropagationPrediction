@@ -1,0 +1,17 @@
+[
+    {
+        "run_num": 56,
+        "is_incident": true,
+        "is_random": true,
+        "random_seed": 866779109,
+        "edge": "208416643",
+        "lanes": [
+            0
+        ],
+        "pos": 8.349012655541417,
+        "start_time": 44356,
+        "start_step": 88712,
+        "duration_time": 1316,
+        "duration_steps": 2632
+    }
+]

@@ -6,11 +6,10 @@ from sumolib import checkBinary # For some reason this import fixes problems wit
 import libsumo as traci
 from time import time
 from multiprocessing import Pool
-import tqdm
+import json
 
 from incident_utils_libsumo import IncidentSettings, SUMOIncident, create_counterfactual
 from setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
-import istarmap
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -34,6 +33,7 @@ def get_args():
     arg_parser.add_argument("--do_counterfactuals", action='store_true', default=False, help="For any incident run the counterfactual of no incident")
     arg_parser.add_argument("--trip_info", action="store_true", default=False, help="Save information of all trips.")
     arg_parser.add_argument("--verbose", action="store_true", default=False, help="Save error and message log of SUMO warnings and errors")
+ #   arg_parser.add_argument("--data_resolution", type=int, default=300, help="The time resolution of the output files")
     args = arg_parser.parse_args()
 
     if args.n_random_incidents == 0 and args.n_non_incidents == 0 and args.incidents_settings_file is None:
@@ -46,10 +46,13 @@ def get_args():
 # contrains Traci control loop
 def run(simulation_settings, start_time, end_time, incident_settings):
     #TODO this only redirect the print statements. SUMO warnings are a WIP, see https://github.com/eclipse/sumo/issues/10344
+    old_stdout = sys.stdout
     if simulation_settings['counterfactual']:
+        print(f"Starting counterfactual for {simulation_settings['simulation_folder'].split('/')[-1]}")
         sys.stdout = open(f"{simulation_settings['simulation_folder']}/log_counterfactual.out", 'w')
         sys.stderr = open(f"{simulation_settings['simulation_folder']}/log_counterfactual.err", 'w')
     else:
+        print(f"Starting {simulation_settings['simulation_folder'].split('/')[-1]}")
         sys.stdout = open(f"{simulation_settings['simulation_folder']}/log.out", 'w')
         sys.stderr = open(f"{simulation_settings['simulation_folder']}/log.err", 'w')
 
@@ -73,7 +76,7 @@ def run(simulation_settings, start_time, end_time, incident_settings):
         if incident_settings.is_incident:
            sumo_incident.sim_incident(step)
 
-        #print(f'step {step}, my time {sim_time}, true sim time {traci.simulation.getTime()}')
+       # print(f'step {step}, my time {sim_time}, true sim time {traci.simulation.getTime()}')
 
         traci.simulationStep()
         
@@ -83,15 +86,22 @@ def run(simulation_settings, start_time, end_time, incident_settings):
     traci.close()
     sys.stdout.flush()
     end_wtime = time()
-    print(f'finished in {end_wtime - start_wtime}')
+
+    sys.stdout = old_stdout
+    if simulation_settings['counterfactual']:
+        print(f"Finished counterfactual for {simulation_settings['simulation_folder'].split('/')[-1]}")
+    else:
+        print(f"Finished {simulation_settings['simulation_folder'].split('/')[-1]}")
+
+
 
 
 # main entry point
 if __name__ == "__main__":
 
     # Hardcoded values TODO check if they need to be fixed
-    simulation_warmup_time = 3600 # 1 hour
-    simulation_congestion_time = 14400 # 4 hours
+    simulation_warmup_time = 3600 # 3600 1 hour
+    simulation_congestion_time = 7200 # 14400 4 hours
 
     args = get_args()
     
@@ -118,9 +128,20 @@ if __name__ == "__main__":
 
     elif args.incidents_settings_file is not None:
         print(f"Running simulations of scenario '{args.scenario}' using incidents in {args.incidents_settings_file}")
+        with open(args.incidents_settings_file, 'r') as f:
+            incident_settings_dicts = json.load(f)
+        print(f'Found settings{incident_settings_dicts}.')
+        n_runs = len(incident_settings_dicts)
+        for i in range(n_runs):
+            incident_settings.append(IncidentSettings(run_num=i, is_random=False))
+            incident_settings[i].load_incident_dict(incident_settings_dicts[i])
+
+        if args.do_counterfactuals:
+            counterfactual_settings = []
+            for i in range(n_runs):
+                counterfactual_settings.append(create_counterfactual(incident_settings[i]))                  
 
     scenario_folder = f'/home/manity/Quick_adap/quick_adap_to_incidents/{args.scenario}'
-
 
     sim_settings = []
     jobs = []
@@ -163,12 +184,13 @@ if __name__ == "__main__":
                 )
             )
 
-            counterfactual_jobs.append((counterfactual_sim_settings[run_num], simulation_start_time, simulation_end_time, counterfactual_settings[run_num]))
-
+            jobs.append((counterfactual_sim_settings[run_num], simulation_start_time, simulation_end_time, counterfactual_settings[run_num]))
+     
+    with Pool(os.cpu_count() - 24) as pool:
+        print(f'Running {len(jobs)} simulations')
+        if args.do_counterfactuals:
+            print(f'with counterfactuals')
+        pool.starmap(run, jobs)
     
-    with Pool(os.cpu_count() - 4) as pool:
-        for _ in tqdm.tqdm(pool.istarmap(run, jobs),
-                           total=len(jobs)):
-            pass
 
     cleanup_temp_files(scenario_folder=scenario_folder)

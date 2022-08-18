@@ -98,6 +98,10 @@ class IncidentSettings():
             file.write(json_str)
         return
 
+    def load_incident_dict(self, dict):
+        for k, v in dict.items():
+            if k not in ['run_num', 'is_random']:
+                setattr(self, k, v)
 
 class SUMOIncident():
     def __init__(self, incident_settings):
