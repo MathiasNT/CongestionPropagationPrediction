@@ -109,7 +109,7 @@ class SUMOIncident():
         self.lanes = incident_settings.lanes
         self.pos = incident_settings.pos
         self.start_step = incident_settings.start_step
-        self.duration = incident_settings.duration_time 
+        self.duration_steps = incident_settings.duration_steps
         self.run_num = incident_settings.run_num
 
         self.slow_zone = 70 

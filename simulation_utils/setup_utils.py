@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from sumolib import checkBinary
 import glob
 
-def setup_incident_sim(scenario_folder, simulation_name, run_num, begin, end, trip_info, verbose):
+def setup_incident_sim(scenario_folder, simulation_name, run_num, begin, end, trip_info, data_freq, verbose):
     # Create simulation folder and results filenames
     sim_num = 0
     simulation_folder = f'{scenario_folder}/Results/{simulation_name}_{sim_num}'
@@ -28,12 +28,14 @@ def setup_incident_sim(scenario_folder, simulation_name, run_num, begin, end, tr
     xml_root = xml_tree.getroot()
     edge_data_settings = xml_root.find('edgeData')
     edge_data_settings.set('file', edge_file)
+    edge_data_settings.set('freq', f'{data_freq:.2f}')
     xml_tree.write(add_temp)
 
     xml_tree = ET.parse(detector_base)    # DO for loop here
     xml_root = xml_tree.getroot()
     for child in xml_root.getchildren():
         child.set('file', detector_file)
+        child.set('period', f'{data_freq:.2f}')
     xml_tree.write(detector_temp)
 
     # Create temp config file
@@ -59,7 +61,7 @@ def setup_incident_sim(scenario_folder, simulation_name, run_num, begin, end, tr
 
     return {'sumoCmd':sumoCmd, 'simulation_folder':simulation_folder, 'scenario_folder': scenario_folder, 'counterfactual':False}
 
-def setup_counterfactual_sim(scenario_folder, simulation_folder, run_num, begin, end, trip_info, verbose):
+def setup_counterfactual_sim(scenario_folder, simulation_folder, run_num, begin, end, trip_info, data_freq, verbose):
     # Create simulation folder and results filenames
     edge_file = f'{simulation_folder}/edgedata_counterfactual.xml'
     detector_file = f'{simulation_folder}/detectordata_counterfactual.xml'
@@ -78,12 +80,14 @@ def setup_counterfactual_sim(scenario_folder, simulation_folder, run_num, begin,
     xml_root = xml_tree.getroot()
     edge_data_settings = xml_root.find('edgeData')
     edge_data_settings.set('file', edge_file)
+    edge_data_settings.set('freq', f'{data_freq:.2f}')
     xml_tree.write(add_temp)
 
     xml_tree = ET.parse(detector_base)    # DO for loop here
     xml_root = xml_tree.getroot()
     for child in xml_root.getchildren():
         child.set('file', detector_file)
+        child.set('period', f'{data_freq:.2f}')
     xml_tree.write(detector_temp)
 
     # Create temp config file

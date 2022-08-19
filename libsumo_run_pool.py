@@ -8,8 +8,9 @@ from time import time
 from multiprocessing import Pool
 import json
 
-from incident_utils_libsumo import IncidentSettings, SUMOIncident, create_counterfactual
-from setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
+from simulation_utils.incident_utils import IncidentSettings, SUMOIncident, create_counterfactual
+from simulation_utils.setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
+from result_utils.results_utils import xml2csv_file
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -20,20 +21,25 @@ else:
 
 def get_args():
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("--gui", action="store_true",
-                            default=False, help="run the gui version of sumo.")
     arg_parser.add_argument("--scenario", choices=['motorway', 'national', 'urban', 'experiment'], help='Which scenatio to run.', required=True)
+
     arg_parser.add_argument("--begin", type=int, default=0, help="Start time of the simulator.")
     arg_parser.add_argument("--end", type=int, default=86400, help="End time of the simulator.")
     arg_parser.add_argument("--incident_only", action='store_true', default=False, help="If true only simulates the time around the congestion")
+
     arg_parser.add_argument("--simulation_name", type=str, default="edgedata", help="The name of the simulation run. Will be name of numbere results folder.")
+
     arg_parser.add_argument("--n_random_incidents", type=int, default=0, help="The number of random incidents to simulate")
     arg_parser.add_argument("--n_non_incidents", type=int, default=0, help="The number of simulations without incident to run")
     arg_parser.add_argument("--incidents_settings_file", type=str, default=None, help="Path to the incident settings file") #TODO implement
+
     arg_parser.add_argument("--do_counterfactuals", action='store_true', default=False, help="For any incident run the counterfactual of no incident")
+
     arg_parser.add_argument("--trip_info", action="store_true", default=False, help="Save information of all trips.")
+
     arg_parser.add_argument("--verbose", action="store_true", default=False, help="Save error and message log of SUMO warnings and errors")
- #   arg_parser.add_argument("--data_resolution", type=int, default=300, help="The time resolution of the output files")
+
+    arg_parser.add_argument("--data_frequency", type=int, default=10, help="The time resolution of the output files")
     args = arg_parser.parse_args()
 
     if args.n_random_incidents == 0 and args.n_non_incidents == 0 and args.incidents_settings_file is None:
@@ -43,7 +49,7 @@ def get_args():
         raise Exception("Please ONLY set either number of random or non incidents or use a incidents settings file")
     return args
 
-# contrains Traci control loop
+# Traci control loop
 def run(simulation_settings, start_time, end_time, incident_settings):
     #TODO this only redirect the print statements. SUMO warnings are a WIP, see https://github.com/eclipse/sumo/issues/10344
     old_stdout = sys.stdout
@@ -76,8 +82,6 @@ def run(simulation_settings, start_time, end_time, incident_settings):
         if incident_settings.is_incident:
            sumo_incident.sim_incident(step)
 
-       # print(f'step {step}, my time {sim_time}, true sim time {traci.simulation.getTime()}')
-
         traci.simulationStep()
         
         step+=1
@@ -89,9 +93,19 @@ def run(simulation_settings, start_time, end_time, incident_settings):
 
     sys.stdout = old_stdout
     if simulation_settings['counterfactual']:
-        print(f"Finished counterfactual for {simulation_settings['simulation_folder'].split('/')[-1]}")
+        xml2csv_file(f'{simulation_settings["simulation_folder"]}/detectordata_counterfactual.xml')
+        xml2csv_file(f'{simulation_settings["simulation_folder"]}/edgedata_counterfactual.xml')
+        os.remove(f'{simulation_settings["simulation_folder"]}/detectordata_counterfactual.xml')
+        os.remove(f'{simulation_settings["simulation_folder"]}/edgedata_counterfactual.xml')
+
+        print(f"Finished counterfactual for {simulation_settings['simulation_folder'].split('/')[-1]} in {end_wtime - start_wtime}")
     else:
-        print(f"Finished {simulation_settings['simulation_folder'].split('/')[-1]}")
+        xml2csv_file(f'{simulation_settings["simulation_folder"]}/detectordata.xml')
+        xml2csv_file(f'{simulation_settings["simulation_folder"]}/edgedata.xml')
+        os.remove(f'{simulation_settings["simulation_folder"]}/detectordata.xml')
+        os.remove(f'{simulation_settings["simulation_folder"]}/edgedata.xml')
+
+        print(f"Finished {simulation_settings['simulation_folder'].split('/')[-1]} in {end_wtime - start_wtime}")
 
 
 
@@ -165,6 +179,7 @@ if __name__ == "__main__":
                       begin=simulation_start_time,
                       end=simulation_end_time,
                       trip_info=args.trip_info,
+                      data_freq=args.data_frequency,
                       verbose=args.verbose
             )
         )
@@ -180,6 +195,7 @@ if __name__ == "__main__":
                     begin=simulation_start_time,
                     end=simulation_end_time,
                     trip_info=args.trip_info,
+                    data_freq=args.data_frequency,
                     verbose=args.verbose
                 )
             )
