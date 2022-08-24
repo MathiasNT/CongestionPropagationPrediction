@@ -1,3 +1,6 @@
+from matplotlib.collections import LineCollection
+import matplotlib.pyplot as plt
+ 
 # Modified version of the plotNet in the sumolib python package
 #https://github.com/eclipse/sumo/blob/4f8605bda9efe8d13a2fc6fa78c47385412c1a5b/tools/sumolib/visualization/helpers.py
 def plotNet(net, colors, widths, options, incident_edge_obj, ax, margin=1600, area=None):

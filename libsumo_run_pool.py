@@ -10,7 +10,7 @@ import json
 
 from utils.simulation_utils.incident_utils import IncidentSettings, SUMOIncident, create_counterfactual
 from utils.simulation_utils.setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
-from utils.result_utils.results_utils import xml2csv_file
+from utils.result_utils.file_utils import xml2csv_file
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')

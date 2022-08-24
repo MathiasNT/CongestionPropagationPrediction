@@ -36,7 +36,7 @@ try:
 except ImportError:
     haveLxml = False
 
-from result_utils import xsd
+from .xsd import XsdStructure, XmlAttribute
 
 
 class NestingHandler(xml.sax.handler.ContentHandler):
@@ -69,7 +69,7 @@ class AttrFinder(NestingHandler):
         self.depthTags = {}  # child of root: depth of appearance -> tag list
         self.rootDepth = 1 if split else 0
         if xsdFile:
-            self.xsdStruc = xsd.XsdStructure(xsdFile)
+            self.xsdStruc = XsdStructure(xsdFile)
             if split:
                 for ele in self.xsdStruc.root.children:
                     self.attrs[ele.name] = []
@@ -126,7 +126,7 @@ class AttrFinder(NestingHandler):
             # collect attributes
             for a in sorted(list(attrs.keys())):
                 if a not in self.tagAttrs[name] and ":" not in a:
-                    self.tagAttrs[name][a] = xsd.XmlAttribute(a)
+                    self.tagAttrs[name][a] = XmlAttribute(a)
                     if not (name, a) in self.renamedAttrs:
                         anew = "%s_%s" % (name, a)
                         self.renamedAttrs[(name, a)] = anew
