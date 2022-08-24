@@ -8,9 +8,9 @@ from time import time
 from multiprocessing import Pool
 import json
 
-from simulation_utils.incident_utils import IncidentSettings, SUMOIncident, create_counterfactual
-from simulation_utils.setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
-from result_utils.results_utils import xml2csv_file
+from utils.simulation_utils.incident_utils import IncidentSettings, SUMOIncident, create_counterfactual
+from utils.simulation_utils.setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
+from utils.result_utils.results_utils import xml2csv_file
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -114,8 +114,8 @@ def run(simulation_settings, start_time, end_time, incident_settings):
 if __name__ == "__main__":
 
     # Hardcoded values TODO check if they need to be fixed
-    simulation_warmup_time = 3600 # 3600 1 hour
-    simulation_congestion_time = 7200 # 14400 4 hours
+    simulation_warmup_time = 1200 # 3600 1 hour
+    simulation_run_time = 14400 # 14400 4 hours
 
     args = get_args()
     
@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
         if args.incident_only:
             simulation_start_time = (incident_settings[run_num].start_time - simulation_warmup_time)
-            simulation_end_time = (simulation_start_time + incident_settings[run_num].duration_time + simulation_congestion_time)
+            simulation_end_time = (simulation_start_time + simulation_run_time)
         else:
             simulation_start_time =  args.begin
             simulation_end_time = args.end
@@ -202,7 +202,7 @@ if __name__ == "__main__":
 
             jobs.append((counterfactual_sim_settings[run_num], simulation_start_time, simulation_end_time, counterfactual_settings[run_num]))
      
-    with Pool(os.cpu_count() - 24) as pool:
+    with Pool(os.cpu_count() - 4) as pool:
         print(f'Running {len(jobs)} simulations')
         if args.do_counterfactuals:
             print(f'with counterfactuals')

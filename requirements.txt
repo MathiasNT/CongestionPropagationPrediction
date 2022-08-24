@@ -1,0 +1,6 @@
+libsumo==1.14.1
+lxml==4.9.1
+numpy==1.23.1
+sumolib==1.14.1
+traci==1.14.1
+utils==1.0.1

@@ -1,4 +1,3 @@
-#TODO see todos from libsumo version
 import numpy as np
 import json
 import sumolib
@@ -27,7 +26,7 @@ class IncidentSettings():
         self.slow_zone = 70 
         self.lc_zone = 20
         self.lc_prob_zone = 170
-        self.slow_zone_speed = 5 # 13.8 is 50 km/h should work for highway situations.
+        self.slow_zone_speed = 13.8 # 13.8 is 50 km/h should work for highway situations.
 
 
         self.run_num = run_num
