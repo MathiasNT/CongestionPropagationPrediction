@@ -1,6 +1,7 @@
 # Ignore results folders
 */Results/*
 *_temp*
+notebooks/*/Results/
 
 
 

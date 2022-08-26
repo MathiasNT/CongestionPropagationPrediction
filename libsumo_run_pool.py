@@ -202,7 +202,7 @@ if __name__ == "__main__":
 
             jobs.append((counterfactual_sim_settings[run_num], simulation_start_time, simulation_end_time, counterfactual_settings[run_num]))
      
-    with Pool(os.cpu_count() - 4) as pool:
+    with Pool(os.cpu_count() - 24) as pool:
         print(f'Running {len(jobs)} simulations')
         if args.do_counterfactuals:
             print(f'with counterfactuals')
