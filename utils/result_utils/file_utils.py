@@ -1,5 +1,5 @@
-from result_utils import dotdict
-from result_utils import xml2csv
+from .dotdict import DotDict
+from .xml2csv import AttrFinder, CSVWriter
 import xml.sax
 import os
 import glob
@@ -9,9 +9,9 @@ def xml2csv_file(file_path):
     This is a simplified version of the main function from SUMO's xml2dict that does not take arguments.
     '''
     options_dict = {'separator':';', 'quotechar':'', 'xsd':None, 'validation':False, 'split':False, 'output':None, 'source':file_path}
-    options = dotdict.dotdict(options_dict)
-    attrFinder = xml2csv.AttrFinder(options.xsd, options.source, options.split)
-    handler = xml2csv.CSVWriter(attrFinder, options)
+    options = DotDict(options_dict)
+    attrFinder = AttrFinder(options.xsd, options.source, options.split)
+    handler = CSVWriter(attrFinder, options)
     xml.sax.parse(options.source, handler)
 
 def xml2csv_path(path):

@@ -14,12 +14,12 @@
             "subProcess": true,
             "args": [
                 "--scenario",
-                "motorway",
+                "experiment",
                 "--simulation_name",
                 "debug_test",
                 "--verbose",
                 "--n_random_incidents",
-                "20",
+                "2",
                 "--incident_only",
                 "--do_counterfactuals"
             ]
@@ -31,6 +31,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
+            "subProcess": true,
             "args": [
                 "--scenario",
                 "motorway",
@@ -38,7 +39,7 @@
                 "debug_test",
                 "--verbose",
                 "--incidents_settings_file",
-                "/home/manity/Quick_adap/quick_adap_to_incidents/notebooks/incident_settings.json",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/motorway/Sim_settings/incident1.json",
                 "--incident_only",
             ]
         },

@@ -1,11 +1,10 @@
-#TODO see todos from libsumo version
 import numpy as np
 import json
 import sumolib
 import os
 import sys
 
-if os.environ['OS'].startswith('Windows'):
+if 'OS' in os.environ.keys():
     import traci
     con_lib = 'traci'
 else:
@@ -23,6 +22,13 @@ def create_counterfactual(incident_settings):
 
 class IncidentSettings():
     def __init__(self, run_num, is_random=False):
+        # Currently hardcoded values
+        self.slow_zone = 70 
+        self.lc_zone = 20
+        self.lc_prob_zone = 170
+        self.slow_zone_speed = 13.8 # 13.8 is 50 km/h should work for highway situations.
+
+
         self.run_num = run_num
         self.is_incident = False
         self.is_random = is_random
@@ -72,13 +78,21 @@ class IncidentSettings():
     def random_edge(self):
         object_list = traci.edge.getIDList() 
         edge_list = [edge for edge in object_list if not edge.startswith(':')] # Remove junctions
+        edge_list = [edge for edge in edge_list if len(traci.lane.getLinks(f'{edge}_0')) != 0] # Remove last edges
         self.edge = np.random.choice(edge_list)
     
     def random_lanes(self):
         n_lanes = traci.edge.getLaneNumber(self.edge)
         lane_names = np.arange(0, n_lanes)
         n_blocked_lanes = np.random.randint(1, n_lanes + 1)
-        blocked_lanes = np.random.choice(lane_names, n_blocked_lanes, replace=False)
+
+        if np.random.randint(0,2):
+            # Do block from low
+            blocked_lanes = lane_names[:n_blocked_lanes]
+        else:
+            blocked_lanes = lane_names[-n_blocked_lanes:]
+
+        # blocked_lanes = np.random.choice(lane_names, n_blocked_lanes, replace=False) for fully random lanes
         self.lanes = blocked_lanes.tolist()
     
     def random_pos(self):
@@ -103,6 +117,11 @@ class IncidentSettings():
             file.write(json_str)
         return
 
+    def load_incident_dict(self, dict):
+        for k, v in dict.items():
+            if k not in ['run_num', 'is_random']:
+                setattr(self, k, v)
+
 
 class SUMOIncident():
     def __init__(self, incident_settings):
@@ -113,10 +132,12 @@ class SUMOIncident():
         self.duration_steps = incident_settings.duration_steps 
         self.run_num = incident_settings.run_num
 
-        self.slow_zone = 70 
-        self.lc_zone = 20
-        self.lc_prob_zone = 170
-        self.slow_zone_speed = 5 # 13.8 is 50 km/h should work for highway situations.
+        self.slow_zone = incident_settings.slow_zone
+        self.lc_zone = incident_settings.lc_zone
+        self.lc_prob_zone = incident_settings.lc_prob_zone
+        self.slow_zone_speed = incident_settings.slow_zone_speed
+        
+        
 
         # These are set in the traci init
         self.incident_edge_lanes = None        
@@ -163,9 +184,17 @@ class SUMOIncident():
                 print(f"run {self.run_num} step {step} creating block {self.incident_edge}_{lane}_{self.pos}_{self.start_step}")
                 traci.route.add(incident_route_id, [self.incident_edge, self.downstream_edges[0]])
                 traci.vehicle.add(vehID=incident_veh_id, routeID=incident_route_id, typeID='IC')
-                traci.vehicle.moveTo(vehID=incident_veh_id, laneID=f'{self.incident_edge}_{lane}', pos=int(self.pos)) # Note annoying difference in position or pos between libsum and traci
+                
+                if con_lib == 'traci':
+                    traci.vehicle.moveTo(vehID=incident_veh_id, laneID=f'{self.incident_edge}_{lane}', pos=int(self.pos))
+                elif con_lib == 'libsumo':
+                    traci.vehicle.moveTo(vehID=incident_veh_id, laneID=f'{self.incident_edge}_{lane}', position=int(self.pos))
+
                 traci.vehicle.setSpeed(vehID=incident_veh_id, speed=0)
-                traci.vehicle.setLaneChangeMode(vehID=incident_veh_id, lcm=0) # Again an annoying difference between libSumo and traci
+                if con_lib == 'traci':
+                    traci.vehicle.setLaneChangeMode(vehID=incident_veh_id, lcm=0) # Again an annoying difference between libSumo and traci
+                elif con_lib == 'libsumo':
+                    traci.vehicle.setLaneChangeMode(vehID=incident_veh_id, laneChangeMode=0) # Again an annoying difference between libSumo and traci
         
         elif step > self.start_step and (step-self.start_step)%100==0 and (step-self.start_step) < self.duration_steps: # Starts moving block to avoid time out
             for lane in self.lanes:

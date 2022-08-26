@@ -1,0 +1,21 @@
+[{
+    "slow_zone": 70,
+    "lc_zone": 20,
+    "lc_prob_zone": 170,
+    "slow_zone_speed": 5,
+    "run_num": 53,
+    "is_incident": true,
+    "is_random": true,
+    "random_seed": 231602494,
+    "edge": "4414080#0.756.47",
+    "lanes": [
+        0,
+        1,
+        2
+    ],
+    "pos": 21.82098870155751,
+    "start_time": 36785,
+    "start_step": 73570,
+    "duration_time": 1163,
+    "duration_steps": 2326
+}]
