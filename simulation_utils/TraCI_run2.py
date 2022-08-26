@@ -111,13 +111,22 @@ if __name__ == "__main__":
     #)
     
     incident_settings.set_incident(
-        edge="208416643",
-        lanes=[0],
-        pos=8.349012655541417,
-        start_time=44356,
-        duration=1316,
+        edge='360361373-AddedOnRampEdge',
+        lanes=[0,1, 2, 3],
+        pos=21.82098870155751, 
+        start_time=38135,
+        duration=1224,
         is_incident=True,
     )
+
+    #incident_settings.set_incident(
+        #edge="4414080#0.187",
+        #lanes=[0,1],
+        #pos=63.18027276725517,
+        #start_time=64049,
+        #duration=1132,
+        #is_incident=True,
+    #)
     
     ## National
     #incident_settings.set_incident(

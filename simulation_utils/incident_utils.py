@@ -132,6 +132,7 @@ class SUMOIncident():
         return
 
     def sim_incident(self, step, reroute=False):
+        self.catch_teleporting_vehs()
         self.slow_and_change_lanes(step)
         if self.pos < np.max([self.slow_zone, self.lc_prob_zone]):
             self.slow_and_change_upstream(step)
@@ -283,6 +284,16 @@ class SUMOIncident():
                 traci.vehicle.setMaxSpeed(veh, 55.55) # 55.55 is default SUMO settings, so should be ok
             elif veh_class == 'truck':
                 traci.vehicle.setMaxSpeed(veh, 36.11) # 55.55 is default SUMO settings, so should be ok
+
+    def catch_teleporting_vehs(self):
+        teleported_vehicles = traci.simulation.getStartingTeleportIDList()
+        if len(teleported_vehicles) != 0:
+            for veh in teleported_vehicles:
+                veh_class = traci.vehicle.getVehicleClass(veh)
+                if veh_class == 'passenger':
+                    traci.vehicle.setMaxSpeed(veh, 55.55) # 55.55 is default SUMO settings, so should be ok
+                elif veh_class == 'truck':
+                    traci.vehicle.setMaxSpeed(veh, 36.11) # 55.55 is default SUMO settings, so should be ok
 
     def traci_init(self, scenario_folder):
         self.incident_edge_lanes = list(range(traci.edge.getLaneNumber(self.incident_edge)))
