@@ -1,30 +1,78 @@
-import pandas as pd
+from importlib.resources import path
+from torch.utils.data import Dataset, DataLoader, random_split
+import torch
+import pytorch_lightning as pl
 import numpy as np
 
-def transform_df_to_tensor(df, interpolation_lim=5):
-    df = df.replace(-1, np.nan)
-    df['edge_id'] = df.interval_id.str.split('_').str[1]
-    df['lane_number'] = df.interval_id.str.split('_').str[-1]
-    edges = df.edge_id.unique()
-    lanes = df.lane_number.unique()
-    time = df.interval_begin.unique()
-    index_names = ['edge_id', 'lane_number', 'interval_begin']
-    multi_index = pd.MultiIndex.from_product([edges, lanes, time], names = index_names)
-    df = df.set_index(index_names)[['interval_occupancy', 'interval_speed']].reindex(multi_index, fill_value=-1).reset_index(level=2)
+class IncidentDataSet(Dataset):
+    def __init__(self, input_data, target_data, incident_settings):
+        self.input_data = input_data
+        self.target_data = target_data
+        self.incident_settings = incident_settings
+        
+    def __len__(self):
+        return len(self.input_data)
     
-    if interpolation_lim != 0:    
-        df = df.interpolate(limit=interpolation_lim, limit_area='inside') # TODO think about if this is a good idea again
-        print(df.isna().sum())
-        df = df.replace(np.nan, 0)
+    def __getitem__(self, idx):
+        input_batch = self.input_data[idx]
+        target_batch = self.target_data[idx]
+        incident_settings_batch = self.incident_settings[idx]
+        
+        return {'input': input_batch,
+                'target': target_batch}
+                #'incident_settings': incident_settings_batch} TODO Get rid of the dictionary here it messes up the dataloader
+
+
+class IncidentDataModule(pl.LightningDataModule):
+    def __init__(self, folder_path, train_frac=0.6,  batch_size=32):
+        super().__init__()
+        self.batch_size = batch_size
+        self.folder_path = folder_path
+        self.train_frac = train_frac 
+
+    def prepare_data(self):
+        # TODO implement check of the folder here -> have code in notebbok on data preprocess
+        return
     
-    data = df.values
-    data = data.reshape(len(edges),len(lanes), len(time), -1)
+    def setup(self, stage=None):
+        input_full = np.load(f'{self.folder_path}/input_data.npy')
+        target_full = np.load(f'{self.folder_path}/target_data.npy')
+        incident_settings_full = np.load(f'{self.folder_path}/incident_settings.npy', allow_pickle=True)
 
-    return data
+        input_full = torch.Tensor(input_full)
+        target_full = torch.Tensor(target_full)
 
-def get_index_to_edge_dicts(df):
-    df['edge_id'] = df.interval_id.str.split('_').str[1]
-    edges = df.edge_id.unique()
-    edge_to_ind = {edge:i for i,edge in enumerate(edges)}
-    ind_to_edge = {i:edge for i,edge in enumerate(edges)}
-    return ind_to_edge, edge_to_ind
+
+        train_len = int(np.ceil(len(input_full) * self.train_frac))
+        test_val_len = int(np.round((len(input_full) - train_len) * 0.5))
+        train_set, val_set, test_set = random_split(range(len(input_full)), [train_len, test_val_len,test_val_len])
+
+        self.input_train = input_full[train_set.indices]
+        self.input_val = input_full[val_set.indices]
+        self.input_test = input_full[test_set.indices]
+
+        self.target_train = target_full[train_set.indices]
+        self.target_val = target_full[val_set.indices]
+        self.target_test = target_full[test_set.indices]
+
+        self.incident_settings_train = incident_settings_full[train_set.indices]
+        self.incident_settings_val = incident_settings_full[val_set.indices]
+        self.incident_settings_test = incident_settings_full[test_set.indices]
+
+    def train_dataloader(self):
+        train_split = IncidentDataSet(self.input_train,
+                                      self.target_train,
+                                      self.incident_settings_train)
+        return DataLoader(train_split, batch_size=self.batch_size, num_workers=8)
+
+    def val_dataloader(self):
+        val_split = IncidentDataSet(self.input_val,
+                                      self.target_val,
+                                      self.incident_settings_val)
+        return DataLoader(val_split, batch_size=self.batch_size, num_workers=8)
+
+    def test_dataloader(self):
+        test_split = IncidentDataSet(self.input_test,
+                                      self.target_test,
+                                      self.incident_settings_test)
+        return DataLoader(test_split, batch_size=self.batch_size, num_workers=8)
