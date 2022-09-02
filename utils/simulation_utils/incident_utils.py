@@ -318,6 +318,7 @@ class SUMOIncident():
         teleported_vehicles = traci.simulation.getStartingTeleportIDList()
         if len(teleported_vehicles) != 0:
             for veh in teleported_vehicles:
+                print('Catched teleported {veh}, restoring standard speed')
                 veh_class = traci.vehicle.getVehicleClass(veh)
                 if veh_class == 'passenger':
                     traci.vehicle.setMaxSpeed(veh, 55.55) # 55.55 is default SUMO settings, so should be ok

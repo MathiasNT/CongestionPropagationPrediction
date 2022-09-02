@@ -1,0 +1,24 @@
+[
+    {
+        "slow_zone": 70,
+        "lc_zone": 20,
+        "lc_prob_zone": 170,
+        "slow_zone_speed": 13.8,
+        "run_num": 1175,
+        "is_incident": true,
+        "is_random": true,
+        "random_seed": 1307721398,
+        "edge": "360361373-AddedOnRampEdge",
+        "lanes": [
+            1,
+            2,
+            3,
+            4
+        ],
+        "pos": 30.702817167882127,
+        "start_time": 38135,
+        "start_step": 76270,
+        "duration_time": 1224,
+        "duration_steps": 2448
+    }
+]
