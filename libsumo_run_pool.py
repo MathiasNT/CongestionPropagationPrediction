@@ -7,10 +7,12 @@ import libsumo as traci
 from time import time
 from multiprocessing import Pool
 import json
+import numpy as np
 
 from utils.simulation_utils.incident_utils import IncidentSettings, SUMOIncident, create_counterfactual
 from utils.simulation_utils.setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
 from utils.result_utils.file_utils import xml2csv_file
+from utils.data_utils.preprocess_utils import infer_incident_data
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -31,7 +33,7 @@ def get_args():
 
     arg_parser.add_argument("--n_random_incidents", type=int, default=0, help="The number of random incidents to simulate")
     arg_parser.add_argument("--n_non_incidents", type=int, default=0, help="The number of simulations without incident to run")
-    arg_parser.add_argument("--incidents_settings_file", type=str, default=None, help="Path to the incident settings file") #TODO implement
+    arg_parser.add_argument("--incident_settings_file", type=str, default=None, help="Path to the incident settings file")
 
     arg_parser.add_argument("--do_counterfactuals", action='store_true', default=False, help="For any incident run the counterfactual of no incident")
 
@@ -42,14 +44,13 @@ def get_args():
     arg_parser.add_argument("--data_frequency", type=int, default=10, help="The time resolution of the output files")
     args = arg_parser.parse_args()
 
-    if args.n_random_incidents == 0 and args.n_non_incidents == 0 and args.incidents_settings_file is None:
+    if args.n_random_incidents == 0 and args.n_non_incidents == 0 and args.incident_settings_file is None:
         raise Exception("Please set either number of random or non incidents or use a incidents settings file")
 
-    if (args.n_random_incidents == 0) + (args.n_non_incidents == 0) + (args.incidents_settings_file is None) != 2:
+    if (args.n_random_incidents == 0) + (args.n_non_incidents == 0) + (args.incident_settings_file is None) != 2:
         raise Exception("Please ONLY set either number of random or non incidents or use a incidents settings file")
     return args
 
-# Traci control loop
 def run(simulation_settings, start_time, end_time, incident_settings):
     #TODO this only redirect the print statements. SUMO warnings are a WIP, see https://github.com/eclipse/sumo/issues/10344
     old_stdout = sys.stdout
@@ -107,7 +108,16 @@ def run(simulation_settings, start_time, end_time, incident_settings):
 
         print(f"Finished {simulation_settings['simulation_folder'].split('/')[-1]} in {end_wtime - start_wtime}")
 
-
+    # TODO Implement the data preprocess step here to take advantage of the parallel here anyway
+    # TODO Would need a larger refactor to make sure both simulations are finished before running this.
+    #if simulation_settings['counterfactual']:
+        #input_data, target_data, inci_data, counter_data, ind_to_edge = infer_incident_data(f'{incident_settings["simulation_folder"]}')
+        #np.save(f'{simulation_settings["simulation_folder"]}/input_data.npy', input_data)
+        #np.save(f'{simulation_settings["simulation_folder"]}/target_data.npy', target_data)
+        #np.save(f'{simulation_settings["simulation_folder"]}/inci_data.npy', inci_data)
+        #np.save(f'{simulation_settings["simulation_folder"]}/counter_data.npy', counter_data)
+        #json.dump( ind_to_edge, open( "file_name.json", 'w' ) )
+    #else:
 
 
 # main entry point
@@ -140,9 +150,9 @@ if __name__ == "__main__":
         if args.do_counterfactuals:
             raise Exception('No reason to do counterfactuals without incidents')
 
-    elif args.incidents_settings_file is not None:
-        print(f"Running simulations of scenario '{args.scenario}' using incidents in {args.incidents_settings_file}")
-        with open(args.incidents_settings_file, 'r') as f:
+    elif args.incident_settings_file is not None:
+        print(f"Running simulations of scenario '{args.scenario}' using incidents in {args.incident_settings_file}")
+        with open(args.incident_settings_file, 'r') as f:
             incident_settings_dicts = json.load(f)
         print(f'Found settings{incident_settings_dicts}.')
         n_runs = len(incident_settings_dicts)
@@ -202,6 +212,7 @@ if __name__ == "__main__":
 
             jobs.append((counterfactual_sim_settings[run_num], simulation_start_time, simulation_end_time, counterfactual_settings[run_num]))
      
+    # TODO figure out what can be done about how to avoid killing the master when a thread gets an error
     with Pool(os.cpu_count() - 24) as pool:
         print(f'Running {len(jobs)} simulations')
         if args.do_counterfactuals:
