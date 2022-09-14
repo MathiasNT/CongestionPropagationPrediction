@@ -1,5 +1,7 @@
 import pytorch_lightning as pl
 import torch
+import torchmetrics
+from torchmetrics.functional import precision_recall
 
 
 # Train a full model on all of the data as well
@@ -18,26 +20,12 @@ class LstmModelBase(pl.LightningModule):
         super().__init__()
         self.incident_only = config['incident_only']
 
-        self.bce_loss_func = torch.nn.BCELoss()
+        self.bce_loss_func = torch.nn.BCEWithLogitsLoss()
         self.mse_loss_func = torch.nn.MSELoss()
+        self.acc_func = torchmetrics.Accuracy()
         
         self.save_hyperparameters()
 
-    def get_combined_loss(self, y_hat, y):
-        assert y_hat.shape == y.shape, "Shapes do not match"
-        bce_loss = self.bce_loss_func(y_hat[...,0], y[...,0])
-        start_loss = self.mse_loss_func(y_hat[...,1], y[...,1])
-        end_loss = self.mse_loss_func(y_hat[...,2], y[...,2])
-        speed_loss = self.mse_loss_func(y_hat[...,3], y[...,3])
-        return bce_loss, start_loss, end_loss, speed_loss
-
-    @staticmethod
-    def get_accuracy(y_hat, y_true):
-        y_hat = y_hat.flatten()
-        y_true = y_true.flatten()
-        assert y_true.ndim == 1 and y_true.size() == y_hat.size()
-        y_hat = y_hat > 0.5
-        return (y_true == y_hat).sum().item() / y_true.size(0)
 
     def training_step(self, batch, batch_idx):
         x = batch['input']
@@ -57,16 +45,19 @@ class LstmModelBase(pl.LightningModule):
 
         bce_loss, start_loss, end_loss, speed_loss = self.get_combined_loss(y_hat, y_true)
         loss = bce_loss + start_loss + end_loss + speed_loss 
-        accuracy = self.get_accuracy(y_hat[...,0], y_true[...,0])
+        accuracy = self.acc_func(y_hat[...,0], y_true[...,0].int())
+        precision, recall = precision_recall(y_hat[...,0], y_true[...,0].int())
 
-        self.log('train/loss', loss, on_step=False, on_epoch=True, prog_bar=True)
-        self.log('train/accuracy', accuracy, on_step=False, on_epoch=True, prog_bar=True)
-        self.log('train/bce_loss', bce_loss, on_step=False, on_epoch=True)
-        self.log('train/start_loss', start_loss, on_step=False, on_epoch=True)
-        self.log('train/end_loss', end_loss, on_step=False, on_epoch=True)
-        self.log('train/speed_loss', speed_loss, on_step=False, on_epoch=True)
+        self.log(f'train/loss', loss, on_epoch=True)
+        self.log(f'train/bce_loss', bce_loss, on_epoch=True)
+        self.log(f'train/start_loss', start_loss, on_epoch=True)
+        self.log(f'train/end_loss', end_loss, on_epoch=True)
+        self.log(f'train/speed_loss', speed_loss, on_epoch=True)
+        self.log(f'train/accuracy', accuracy, on_epoch=True)
+        self.log(f'train/precision', precision, on_epoch=True)
+        self.log(f'train/recall', recall, on_epoch=True)
         return loss
-    
+
     def validation_step(self, batch, batch_idx):
         x = batch['input']
         time = batch['time']
@@ -76,7 +67,7 @@ class LstmModelBase(pl.LightningModule):
 
         batch_size = x.shape[0]
         batch_incident_mask = (network_info[:,:, 0] == 0)
-        
+
         x, incident_info = self.reshape_inputs(x, time, incident_info, batch_incident_mask)
 
         y_hat = self.forward(x, incident_info)
@@ -85,14 +76,17 @@ class LstmModelBase(pl.LightningModule):
 
         bce_loss, start_loss, end_loss, speed_loss = self.get_combined_loss(y_hat, y_true)
         loss = bce_loss + start_loss + end_loss + speed_loss 
-        accuracy = self.get_accuracy(y_hat[...,0], y_true[...,0])
+        accuracy = self.acc_func(y_hat[...,0], y_true[...,0].int())
+        precision, recall = precision_recall(y_hat[...,0], y_true[...,0].int())
 
-        self.log('val/loss', loss, on_epoch=True)
-        self.log('val/bce_loss', bce_loss, on_epoch=True)
-        self.log('val/start_loss', start_loss, on_epoch=True)
-        self.log('val/end_loss', end_loss, on_epoch=True)
-        self.log('val/speed_loss', speed_loss, on_epoch=True)
-        self.log('val/accuracy', accuracy, on_epoch=True)
+        self.log(f'val/loss', loss, on_epoch=True)
+        self.log(f'val/bce_loss', bce_loss, on_epoch=True)
+        self.log(f'val/start_loss', start_loss, on_epoch=True)
+        self.log(f'val/end_loss', end_loss, on_epoch=True)
+        self.log(f'val/speed_loss', speed_loss, on_epoch=True)
+        self.log(f'val/accuracy', accuracy, on_epoch=True)
+        self.log(f'val/precision', precision, on_epoch=True)
+        self.log(f'val/recall', recall, on_epoch=True)
 
     def test_step(self, batch, batch_idx):
         # TODO double check if this function is necessary, I think PL will just use the val function
@@ -113,14 +107,57 @@ class LstmModelBase(pl.LightningModule):
 
         bce_loss, start_loss, end_loss, speed_loss = self.get_combined_loss(y_hat, y_true)
         loss = bce_loss + start_loss + end_loss + speed_loss 
-        accuracy = self.get_accuracy(y_hat[...,0], y_true[...,0])
+        accuracy = self.acc_func(y_hat[...,0], y_true[...,0].int())
+        precision, recall = precision_recall(y_hat[...,0], y_true[...,0].int())
 
-        self.log('test/loss', loss, on_epoch=True)
-        self.log('test/bce_loss', bce_loss, on_epoch=True)
-        self.log('test/start_loss', start_loss, on_epoch=True)
-        self.log('test/end_loss', end_loss, on_epoch=True)
-        self.log('test/speed_loss', speed_loss, on_epoch=True)
-        self.log('test/accuracy', accuracy, on_epoch=True)
+        self.log(f'test/loss', loss, on_epoch=True)
+        self.log(f'test/bce_loss', bce_loss, on_epoch=True)
+        self.log(f'test/start_loss', start_loss, on_epoch=True)
+        self.log(f'test/end_loss', end_loss, on_epoch=True)
+        self.log(f'test/speed_loss', speed_loss, on_epoch=True)
+        self.log(f'test/accuracy', accuracy, on_epoch=True)
+        self.log(f'test/precision', precision, on_epoch=True)
+        self.log(f'test/recall', recall, on_epoch=True)
+
+    def standard_step(self, batch, step_type):
+        # TODO Tried this but the logging got wonky - don't know why though which is weird
+        x = batch['input']
+        time = batch['time']
+        y_true = batch['target']
+        incident_info = batch['incident_info']
+        network_info = batch['network_info']
+
+        batch_size = x.shape[0]
+        batch_incident_mask = (network_info[:,:, 0] == 0)
+
+        x, incident_info = self.reshape_inputs(x, time, incident_info, batch_incident_mask)
+
+        y_hat = self.forward(x, incident_info)
+
+        y_hat, y_true = self.reshape_targets(y_hat, y_true, batch_incident_mask, batch_size)
+
+        bce_loss, start_loss, end_loss, speed_loss = self.get_combined_loss(y_hat, y_true)
+        loss = bce_loss + start_loss + end_loss + speed_loss 
+        accuracy = self.acc_func(y_hat[...,0], y_true[...,0].int())
+        precision, recall = precision_recall(y_hat[...,0], y_true[...,0].int())
+
+        self.log(f'{step_type}/loss', loss, on_epoch=True)
+        self.log(f'{step_type}/bce_loss', bce_loss, on_epoch=True)
+        self.log(f'{step_type}/start_loss', start_loss, on_epoch=True)
+        self.log(f'{step_type}/end_loss', end_loss, on_epoch=True)
+        self.log(f'{step_type}/speed_loss', speed_loss, on_epoch=True)
+        self.log(f'{step_type}/accuracy', accuracy, on_epoch=True)
+        self.log(f'{step_type}/precision', precision, on_epoch=True)
+        self.log(f'{step_type}/recall', recall, on_epoch=True)
+        return loss
+
+    def get_combined_loss(self, y_hat, y):
+        assert y_hat.shape == y.shape, "Shapes do not match"
+        bce_loss = self.bce_loss_func(y_hat[...,0], y[...,0])
+        start_loss = self.mse_loss_func(y_hat[...,1], y[...,1])
+        end_loss = self.mse_loss_func(y_hat[...,2], y[...,2])
+        speed_loss = self.mse_loss_func(y_hat[...,3], y[...,3])
+        return bce_loss, start_loss, end_loss, speed_loss
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=1e-3)
@@ -192,7 +229,6 @@ class LstmModel(LstmModelBase):
         hn_fc = torch.relu(hn_fc)
 
         class_logit = self.fc_classifier(hn_fc)
-        class_logit = torch.sigmoid(class_logit)
 
         start_pred = self.fc_start(hn_fc)
         end_pred = self.fc_end(hn_fc)
@@ -248,7 +284,6 @@ class LstmInformedModel(LstmModelBase):
         hn_fc_informed = torch.relu(hn_fc_informed)
 
         class_logit = self.fc_classifier(hn_fc_informed)
-        class_logit = torch.sigmoid(class_logit)
 
         start_pred = self.fc_start(hn_fc_informed)
         end_pred = self.fc_end(hn_fc_informed)
