@@ -1,10 +1,11 @@
 scenario: motorway
 simulation_name: incident3
-model: informed_lstm
-incident_only: True
+model: network_informed_lstm
+incident_only: False
 lstm_input_size: 20 
 lstm_hidden_size: 32 
 fc_hidden_size: 16 
 info_size: 3
+network_info_size: 1
 epochs: 2000
 debug: True

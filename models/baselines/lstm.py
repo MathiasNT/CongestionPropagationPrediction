@@ -37,9 +37,9 @@ class LstmModelBase(pl.LightningModule):
         batch_size = x.shape[0]
         batch_incident_mask = (network_info[:,:, 0] == 0)
 
-        x, incident_info = self.reshape_inputs(x, time, incident_info, batch_incident_mask)
+        x, incident_info, network_info = self.reshape_inputs(x, time, incident_info, network_info, batch_incident_mask)
 
-        y_hat = self.forward(x, incident_info)
+        y_hat = self.forward(x, incident_info, network_info)
 
         y_hat, y_true = self.reshape_targets(y_hat, y_true, batch_incident_mask, batch_size)
 
@@ -68,9 +68,9 @@ class LstmModelBase(pl.LightningModule):
         batch_size = x.shape[0]
         batch_incident_mask = (network_info[:,:, 0] == 0)
 
-        x, incident_info = self.reshape_inputs(x, time, incident_info, batch_incident_mask)
+        x, incident_info, network_info = self.reshape_inputs(x, time, incident_info, network_info, batch_incident_mask)
 
-        y_hat = self.forward(x, incident_info)
+        y_hat = self.forward(x, incident_info, network_info)
 
         y_hat, y_true = self.reshape_targets(y_hat, y_true, batch_incident_mask, batch_size)
 
@@ -99,9 +99,9 @@ class LstmModelBase(pl.LightningModule):
         batch_size = x.shape[0]
         batch_incident_mask = (network_info[:,:, 0] == 0)
 
-        x, incident_info = self.reshape_inputs(x, time, incident_info, batch_incident_mask)
+        x, incident_info, network_info = self.reshape_inputs(x, time, incident_info, network_info, batch_incident_mask)
 
-        y_hat = self.forward(x, incident_info)
+        y_hat = self.forward(x, incident_info, network_info)
 
         y_hat, y_true = self.reshape_targets(y_hat, y_true, batch_incident_mask, batch_size)
 
@@ -130,9 +130,9 @@ class LstmModelBase(pl.LightningModule):
         batch_size = x.shape[0]
         batch_incident_mask = (network_info[:,:, 0] == 0)
 
-        x, incident_info = self.reshape_inputs(x, time, incident_info, batch_incident_mask)
+        x, incident_info, network_info = self.reshape_inputs(x, time, incident_info, network_info, batch_incident_mask)
 
-        y_hat = self.forward(x, incident_info)
+        y_hat = self.forward(x, incident_info, network_info)
 
         y_hat, y_true = self.reshape_targets(y_hat, y_true, batch_incident_mask, batch_size)
 
@@ -162,7 +162,7 @@ class LstmModelBase(pl.LightningModule):
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=1e-3)
 
-    def reshape_inputs(self, x, time, incident_info, batch_incident_mask):
+    def reshape_inputs(self, x, time, incident_info, network_info, batch_incident_mask):
         batch_size, n_nodes, n_lanes, n_timesteps, n_obs_features = x.shape
         n_time_features = time.shape[-1]
 
@@ -184,7 +184,9 @@ class LstmModelBase(pl.LightningModule):
             incident_info = incident_info.unsqueeze(1).expand(-1, n_nodes, -1)
             incident_info = incident_info.reshape(-1, incident_info.shape[-1] )
 
-        return x, incident_info
+            network_info = network_info[...,0].reshape(-1)
+
+        return x, incident_info, network_info
 
     def reshape_targets(self, y_hat, y_true, batch_incident_mask, batch_size):
         
@@ -219,7 +221,7 @@ class LstmModel(LstmModelBase):
         self.fc_end = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
         self.fc_speed = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
 
-    def forward(self, x, incident_info):
+    def forward(self, x, incident_info, network_info):
         batch_size, time_steps, features = x.shape
 
         _, (hn, _) = self.lstm(x)
@@ -265,7 +267,7 @@ class LstmInformedModel(LstmModelBase):
         self.fc_end = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
         self.fc_speed = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
 
-    def forward(self, x, incident_info):
+    def forward(self, x, incident_info, network_info):
         batch_size, time_steps, features = x.shape
 
         _, (hn, _) = self.lstm(x)
@@ -281,6 +283,64 @@ class LstmInformedModel(LstmModelBase):
         # need to replicate the info along the batch dim here
 
         hn_fc_informed = self.fc_inform(torch.cat([hn_fc, info_embed], dim=-1))
+        hn_fc_informed = torch.relu(hn_fc_informed)
+
+        class_logit = self.fc_classifier(hn_fc_informed)
+
+        start_pred = self.fc_start(hn_fc_informed)
+        end_pred = self.fc_end(hn_fc_informed)
+
+        speed_pred = self.fc_speed(hn_fc_informed)
+    
+        y_hat = torch.cat([class_logit, start_pred, end_pred, speed_pred], dim=-1).squeeze()
+        return y_hat
+
+
+class LstmNetworkInformedModel(LstmModelBase):
+    """Informed LSTM baseline.
+
+    Extension of the uninformed lstm baseline. This LSTM gets incident information but still treats each sensor as an independent time series.
+
+
+    OBS: Current implementation only looks at the sensor closest to the incident.
+    """
+    def __init__(self, config):
+        super().__init__(config)
+
+        self.lstm = torch.nn.LSTM(input_size = config['lstm_input_size'],
+                                    hidden_size = config['lstm_hidden_size'],
+                                    batch_first=True)
+
+        self.fc_shared = torch.nn.Linear(in_features= config['lstm_hidden_size'], out_features=config['fc_hidden_size'])
+
+        self.fc_info = torch.nn.Linear(in_features=config['info_size'] + config['network_info_size'], out_features=config['fc_hidden_size'] )
+
+        self.fc_inform = torch.nn.Linear(in_features=config['fc_hidden_size'] * 2, out_features=config['fc_hidden_size'])
+
+        self.fc_classifier = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
+        self.fc_start = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
+        self.fc_end = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
+        self.fc_speed = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
+
+    def forward(self, x, incident_info, network_info):
+        batch_size, time_steps, features = x.shape
+
+        _, (hn, _) = self.lstm(x)
+        hn = torch.relu(hn)
+
+        hn_fc = self.fc_shared(hn)
+        hn_fc = torch.relu(hn_fc).squeeze()
+
+        info = incident_info[:,1:]   # selecting number of blocked lanes, slow zone speed and duration and startime 
+        combined_info = torch.cat([info,network_info.unsqueeze(-1)], dim=-1)       
+
+
+        combined_info_embed = self.fc_info(combined_info) 
+        combined_info_embed = torch.relu(combined_info_embed)
+
+        # need to replicate the info along the batch dim here
+
+        hn_fc_informed = self.fc_inform(torch.cat([hn_fc, combined_info_embed], dim=-1))
         hn_fc_informed = torch.relu(hn_fc_informed)
 
         class_logit = self.fc_classifier(hn_fc_informed)
