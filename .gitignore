@@ -3,6 +3,7 @@
 *_temp*
 notebooks/*/Results/
 incident/*
+wandb*
 
 
 
