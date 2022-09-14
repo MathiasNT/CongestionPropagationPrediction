@@ -1,0 +1,10 @@
+scenario: motorway
+simulation_name: incident3
+model: informed_lstm
+incident_only: True
+lstm_input_size: 20 
+lstm_hidden_size: 32 
+fc_hidden_size: 16 
+info_size: 3
+epochs: 2000
+debug: True

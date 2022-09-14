@@ -51,5 +51,17 @@
             "console": "integratedTerminal",
             "justMyCode": true,
         },
+        {
+            "name": "Torch w. debug config",
+            "type": "python",
+            "request": "launch",
+            "program": "model_dev.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config_path",
+                "debug_config.yaml"
+            ]
+        },
     ]
 }
