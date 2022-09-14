@@ -60,7 +60,7 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "debug_config.yaml"
+                "configs/debug_config.yaml"
             ]
         },
     ]
