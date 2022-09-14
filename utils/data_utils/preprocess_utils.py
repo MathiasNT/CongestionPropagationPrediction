@@ -3,8 +3,8 @@ import numpy as np
 import sumolib
 import json
 
-from .network_utils import get_up_and_down_stream
-from ..general_utils.conversion_utils import trig_transform
+from .network_utils import get_up_and_down_stream, get_edge_to_level_dict_numerical
+from .conversion_utils import trig_transform
 
 
 def transform_df_to_tensor(df, interpolation_lim=5, warmup = 10):
@@ -20,7 +20,7 @@ def transform_df_to_tensor(df, interpolation_lim=5, warmup = 10):
         warmup (int, optional): How many timesteps to throw away for simulator warmup. Defaults to 10.
 
     Returns:
-        data (np.array): array of shape [E, L, T, F]
+        data (np.array): array of shape [E, L, T, F_traffic] F_traffic is (occupancy, speed, nVehContrib)
         time (np.array): array of shape [T] with the timestamps
     """
     df = df.replace(-1, np.nan)
@@ -128,14 +128,16 @@ def infer_incident_data(simulation_path):
 
     Args:
         simulation_path (str): path to the folder with the detectordata.csv and detectordata_counterfactual.csv files 
-        scenario (str): which scenario the simulation is from. Used to find network file
 
     Returns:
-        input_data (np.array): np.array w. shape [E, L, T_i, F] with input data for ML(T_i is time until incident)
-        target_data (np.array): np.array w. shape [E,4] with target data for ML
-        inci_data (np.array): np.array w. shape [E, L, T, F] with the full data from the incident simulation
-        counter_data (np.array): np.array w. shape [E, L, T, F] with the full data from the counterfactual simulation
+        input_data (np.array): array w. shape [N_s, E, L, T_i, F] with input data for ML(T_i is time steps until incident) F = F_traffic + F_time
+        target_data (np.array): array w. shape [N_s, E,4] with target data for ML
+        incident_info (np.array): array w. shape [N_s, 4] with incident info (incident edge, number of blocked lanes, slow zone speed, block duration)
+        network_info (np.array): arary w. shape [N_s, E, 13] with network information (0: upstream/downstream level, 1-7: unused lanes mask, 8-13: padded lane mask)
+        full_inci_data (np.array): array w. shape [N_s, E, L, T, F] with the full data from the incident simulation
+        counter_data (np.array): array w. shape [N_s, E, L, T, F] with the full data from the counterfactual simulation
         ind_to_edge (dict): dict that goes from index to edge id
+        incident_settings (list of dicts): list of all the incident settings dicionaries
     """
 
     # Load incident information and data
@@ -156,33 +158,42 @@ def infer_incident_data(simulation_path):
     inci_df = inci_df.loc[inci_df.interval_begin.between(min_time,max_time)]   
 
     inter_lim = 2 # Has had best performance
-    inci_data, time_sequence = transform_df_to_tensor(inci_df, interpolation_lim=inter_lim, warmup=10)
-    counter_data, _ = transform_df_to_tensor(counter_df, interpolation_lim=inter_lim, warmup=10)
+    full_inci_data, time_sequence = transform_df_to_tensor(inci_df, interpolation_lim=inter_lim, warmup=10)
+    full_counter_data, _ = transform_df_to_tensor(counter_df, interpolation_lim=inter_lim, warmup=10)
 
-    n_edges = inci_data.shape[0]
+    n_edges = full_inci_data.shape[0]
 
     # Create masks 
-    padded_lane_mask = ~(inci_data[...,1].mean(-1) == -1)
-    unused_lanes_mask = ((counter_data[...,2].sum(2) > 0) & (counter_data[...,2].sum(2) < 300))
-    inci_data[unused_lanes_mask] = -2
-    counter_data[unused_lanes_mask] = -2
+    padded_lane_mask = ~(full_inci_data[...,1].mean(-1) == -1)
+    unused_lanes_mask = ((full_counter_data[...,2].sum(2) > 0) & (full_counter_data[...,2].sum(2) < 300))
+    full_inci_data[unused_lanes_mask] = -2
+    full_counter_data[unused_lanes_mask] = -2
     
-    residual_data = inci_data - counter_data
+    residual_data = full_inci_data - full_counter_data
 
     # Load network information
     scenario_folder = simulation_path.split('Results')[0]
     net_path = f'{scenario_folder}/Simulations/Base/network.net.xml'
     net = sumolib.net.readNet(net_path)
     i_edge_obj = net.getEdge(incident_edge)
-    _, upstream_edges, _, _= get_up_and_down_stream(i_edge_obj=i_edge_obj,
-                                                    n_up=40,
-                                                    n_down=40)    
+    edge_to_level_dict_num, upstream_edges, _, _= get_up_and_down_stream(i_edge_obj=i_edge_obj,
+                                                    n_up=100,
+                                                    n_down=100)    
     ind_to_edge, edge_to_ind = get_index_to_edge_dicts(inci_df)
     upstream_edge_idxs = [edge_to_ind[edge] for edge in upstream_edges]
 
+    # Get the network link distance from all sensors to incident edge
+    network_relative_val = np.zeros(n_edges)
+    for i in range(n_edges):
+        edge = ind_to_edge[i]
+        if edge in edge_to_level_dict_num.keys():
+            network_relative_val[i] = edge_to_level_dict_num[ind_to_edge[i]]
+        else:
+            network_relative_val[i] = 200
+    network_relative_val = np.expand_dims(network_relative_val, axis=-1)
 
     # Get normal condition lane STD
-    lane_stds = counter_data[...,1].std(2)
+    lane_stds = full_counter_data[...,1].std(2)
 
     # Only look at speed
     residual_speed = residual_data[...,1]
@@ -232,13 +243,13 @@ def infer_incident_data(simulation_path):
     secs_in_day = 24 * 60 * 60
     trig_time = np.array([trig_transform(seconds, secs_in_day) for seconds in time_sequence])   
     trig_time = np.expand_dims(trig_time, axis=(0,1))
-    trig_time = np.repeat(trig_time, inci_data.shape[0], axis=0)
-    trig_time = np.repeat(trig_time, inci_data.shape[1], axis=1)
-    inci_data = np.concatenate([inci_data, trig_time], axis=-1)
+    trig_time = np.repeat(trig_time, full_inci_data.shape[0], axis=0)
+    trig_time = np.repeat(trig_time, full_inci_data.shape[1], axis=1)
+    full_inci_data = np.concatenate([full_inci_data, trig_time], axis=-1)
     
     # Create the input and target tensors
     incident_time = np.where(time_sequence == incident_settings['start_time'])[0].item()
-    input_data = inci_data[:,:,:incident_time, :]
+    input_data = full_inci_data[:,:,:incident_time, :]
     #input_time = np.expand_dims(trig_time[:input_traffic_data.shape[2]], axis=(0,1))
     #input_time = np.repeat(input_time, input_traffic_data.shape[0], axis=0)
     #input_time = np.repeat(input_time, input_traffic_data.shape[1], axis=1)
@@ -246,4 +257,13 @@ def infer_incident_data(simulation_path):
 
     target_data = np.stack([affected_us_mask, cong_start_time, cong_end_time, delta_speeds], axis=-1)
 
-    return input_data, target_data, inci_data, counter_data, ind_to_edge, incident_settings
+    network_info = np.concatenate([network_relative_val, unused_lanes_mask, padded_lane_mask], axis=-1)
+
+    incident_info = [edge_to_ind[i_edge_obj.getID()], len(incident_settings['lanes']), incident_settings['slow_zone_speed'], incident_settings['duration_time']]
+
+    return input_data, target_data, incident_info, network_info, full_inci_data, full_counter_data, ind_to_edge, incident_settings
+
+# TODO then extend only to close edges
+# TODO implement graph based version just to see how it will perform
+    # TODO get the adjacancy matrix from the graph - implement function here then figure out at what step to do it
+    # TODO start out with a simple torch geometric version - should be really easy to implement

@@ -64,16 +64,16 @@ def get_downstream_edges(edge_obj, n_down):
         downstream_edges_ids[i] = level_ids
     return downstream_edges_ids        
 
-def get_edge_to_level_dict(upstream_edges_ids, downstream_edges_ids, incident_edge):
-    """Creates a dict that goes from edge to level
-
+def get_edge_to_level_dict_string(upstream_edges_ids, downstream_edges_ids, incident_edge):
+    """Creates a dict that goes from edge to level information string.
+        For plotting.
     Args:
         upstream_edges_ids (dict): upstream level dict
         downstream_edges_ids (dict): downstream level dict
         incident_edge (str): id of the incident edge 
 
     Returns:
-        dict: dict w. edge ids as keys and corresponding upstream or downstream level as value
+        dict: dict w. edge ids as keys and corresponding str w. upstream or downstream level as value
     """
     edge_to_level_dict = {}
     for level in upstream_edges_ids.keys():
@@ -86,7 +86,33 @@ def get_edge_to_level_dict(upstream_edges_ids, downstream_edges_ids, incident_ed
 
     edge_to_level_dict[incident_edge] = 'incident_edge'
 
-    return edge_to_level_dict    
+    return edge_to_level_dict
+     
+def get_edge_to_level_dict_numerical(upstream_edges_ids, downstream_edges_ids, incident_edge):
+    """Creates a dict that goes from edge to level information in numerical format.
+        Positive means downstream, negative means upstream
+        TODO what to do with disconnected nodes? For now I will give them a very high value
+        Intuition is that being disconnected has same effect as being very far downstream
+    Args:
+        upstream_edges_ids (dict): upstream level dict
+        downstream_edges_ids (dict): downstream level dict
+        incident_edge (str): id of the incident edge 
+
+    Returns:
+        dict: dict w. edge ids as keys and corresponding numerical upstream or downstream level as value
+    """
+    edge_to_level_dict = {}
+    for level in upstream_edges_ids.keys():
+        for edge in upstream_edges_ids[level]:
+            edge_to_level_dict[edge] = -(level + 1)
+
+    for level in downstream_edges_ids.keys():
+        for edge in downstream_edges_ids[level]:
+            edge_to_level_dict[edge] = (level + 1)
+
+    edge_to_level_dict[incident_edge] = 0
+
+    return edge_to_level_dict
     
 def get_up_and_down_stream(i_edge_obj, n_up, n_down):
     """Function to get the upstream edges, downstream edges and edge_level_dict of the given incident.
@@ -109,7 +135,8 @@ def get_up_and_down_stream(i_edge_obj, n_up, n_down):
     upstream_edges_ids = get_upstream_edges(i_edge_obj, n_down)
     all_upstream_edges_ids = flatten(list(upstream_edges_ids.values()))
 
-    edge_to_level_dict = get_edge_to_level_dict(upstream_edges_ids, downstream_edges_ids, incident_edge)
+
+    edge_to_level_dict = get_edge_to_level_dict_numerical(upstream_edges_ids, downstream_edges_ids, incident_edge)
 
     relevant_edges = all_upstream_edges_ids + all_downstream_edges_ids + [incident_edge]
     upstream_edges = all_upstream_edges_ids + [incident_edge]
