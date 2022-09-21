@@ -114,7 +114,7 @@ if __name__ == "__main__":
         edge='360361373-AddedOnRampEdge',
         lanes=[0,1, 2, 3],
         pos=21.82098870155751, 
-        start_time=38135,
+        start_time=86399,
         duration=1224,
         is_incident=True,
     )
