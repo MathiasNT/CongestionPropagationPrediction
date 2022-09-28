@@ -14,26 +14,35 @@ class BaseModelClass(pl.LightningModule):
     def __init__(self, config, learning_rate):
         super().__init__()
         self.learning_rate = learning_rate
-        self.incident_only = config['incident_only']
+        self.form = config['form']
+        assert self.form in ['incident_only', 'independent', 'graph'], 'Please select prober data form' # TODO test
+        
 
         self.full_loss = config['full_loss']
         self.bce_pos_weight = torch.Tensor([config['bce_pos_weight']])
+
         self.bce_loss_func = torch.nn.BCEWithLogitsLoss(pos_weight=self.bce_pos_weight)
         self.mse_loss_func = torch.nn.MSELoss()
         self.acc_func = torchmetrics.Accuracy()
 
-        self.save_hyperparameters()
 
 
     def training_step(self, batch, batch_idx):
-        loss = self.standard_step(batch=batch, step_type='train')
+        loss, _, _ = self.standard_step(batch=batch, step_type='train')
         return loss
 
     def validation_step(self, batch, batch_idx):
         self.standard_step(batch=batch, step_type='val')
 
     def test_step(self, batch, batch_idx):
-        self.standard_step(batch=batch, step_type='test')
+        _, y_hat_batch, y_true_batch = self.standard_step(batch=batch, step_type='test')
+        return torch.stack([y_hat_batch, y_true_batch])
+
+    def test_epoch_end(self, output_results):
+        output_results_full = torch.cat(output_results, dim=1)
+        y_hat = output_results_full[0]
+        y_true = output_results_full[1]
+        return y_hat
 
     def standard_step(self, batch, step_type):
         x = batch['input']
@@ -47,15 +56,12 @@ class BaseModelClass(pl.LightningModule):
 
         x, incident_info, network_info = self.reshape_inputs(x, time, incident_info, network_info, batch_incident_mask)
 
-        y_hat = self.forward(x, incident_info, network_info)
+        y_hat = self.forward(inputs=x,
+                             incident_info=incident_info,
+                             network_info=network_info)
 
         y_hat, y_true = self.reshape_targets(y_hat, y_true, batch_incident_mask, batch_size)
 
-        # Mask regression prediction for all edges classified as unaffected
-        # Done via multiplication with predicted class s.t. it is differentiable
-        pred_effect_mask = torch.ge(y_hat[...,0], 0) # BCElosswithlogits use sigmoid inside so >= 0 means positive class
-        pred_effect_mask = pred_effect_mask.unsqueeze(-1).expand(-1,-1,3)
-        y_hat[...,1:] = y_hat[...,1:] * pred_effect_mask
 
         bce_loss, start_loss, end_loss, speed_loss = self.calculate_losses(y_hat, y_true)
 
@@ -75,7 +81,7 @@ class BaseModelClass(pl.LightningModule):
         self.log(f'{step_type}/accuracy', accuracy, on_step=False,  on_epoch=True)
         self.log(f'{step_type}/precision', precision, on_step=False,  on_epoch=True)
         self.log(f'{step_type}/recall', recall, on_step=False,  on_epoch=True)
-        return loss
+        return loss, y_hat.detach(), y_true.detach()
 
     def calculate_losses(self, y_hat, y):
         assert y_hat.shape == y.shape, "Shapes do not match"
@@ -90,13 +96,21 @@ class BaseModelClass(pl.LightningModule):
         batch_size, n_nodes, n_lanes, n_timesteps, n_obs_features = x.shape
         n_time_features = time.shape[-1]
 
-        if self.incident_only:
+        if self.form == 'incident_only':
             x = x[batch_incident_mask]
             x = x.permute(0,2,1,3)
             x = x.reshape(batch_size, n_timesteps, n_lanes * n_obs_features)
             time = time[:,0,0,:,:]
             x = torch.cat([x, time], dim=-1)
-        else:
+
+        elif self.form == 'graph':
+            x = x.permute(0,1,3,2,4)
+            x = x.reshape(batch_size, n_nodes, n_timesteps, n_lanes * n_obs_features)
+            time = time[:,:,0,:,:]
+            x = torch.cat([x, time], dim=-1)
+            # TODO figure out what to do with the network_info and incident info
+    
+        elif self.form == 'independent':
             x = x.permute(0,1,3,2,4)            
             x = x.reshape(batch_size, n_nodes, n_timesteps, n_lanes * n_obs_features)
             time = time[:,:,0,:,:]
@@ -109,11 +123,28 @@ class BaseModelClass(pl.LightningModule):
         return x, incident_info, network_info
 
     def reshape_targets(self, y_hat, y_true, batch_incident_mask, batch_size):
-        if self.incident_only:
+        # Mask regression prediction for all edges classified as unaffected
+        # Done via multiplication with predicted class s.t. it is differentiable
+        if self.form == 'incident_only':
             y_true = y_true[batch_incident_mask]
             y_hat = y_hat.reshape(batch_size, -1)
-        else:
+        
+            pred_effect_mask = torch.ge(y_hat[...,0], 0) # BCElosswithlogits use sigmoid inside so >= 0 means positive class
+            pred_effect_mask = pred_effect_mask.unsqueeze(-1).expand(-1,3)
+            y_hat[...,1:] = y_hat[...,1:] * pred_effect_mask
+
+        elif self.form == 'independent':
             y_hat = y_hat.reshape(y_true.shape)
+                    
+            pred_effect_mask = torch.ge(y_hat[...,0], 0) # BCElosswithlogits use sigmoid inside so >= 0 means positive class
+            pred_effect_mask = pred_effect_mask.unsqueeze(-1).expand(-1,-1,3)
+            y_hat[...,1:] = y_hat[...,1:] * pred_effect_mask
+
+        elif self.form == 'graph' :
+            pred_effect_mask = torch.ge(y_hat[...,0], 0) # BCElosswithlogits use sigmoid inside so >= 0 means positive class
+            pred_effect_mask = pred_effect_mask.unsqueeze(-1).expand(-1,-1,3)
+            y_hat[...,1:] = y_hat[...,1:] * pred_effect_mask
+
         return y_hat, y_true
 
     def configure_optimizers(self):
