@@ -72,7 +72,7 @@ if __name__ == '__main__':
                             auto_lr_find=config['infer_lr']
                             )
     else:
-        wandb_logger = WandbLogger(project=config['wandb_project'], name=f"{config['wandb_name']}-{config['random_seed']}", log_model=True)
+        wandb_logger = WandbLogger(project=config['wandb_project'], name=f"{config['wandb_name']}-{config['random_seed']}", save_dir='wandb_dir', log_model=True)
         #wandb.watch(model)
         wandb_logger.log_hyperparams(config)
         trainer = pl.Trainer(max_epochs = config['epochs'],

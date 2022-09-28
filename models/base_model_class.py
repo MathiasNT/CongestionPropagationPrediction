@@ -42,7 +42,9 @@ class BaseModelClass(pl.LightningModule):
         output_results_full = torch.cat(output_results, dim=1)
         y_hat = output_results_full[0]
         y_true = output_results_full[1]
-        return y_hat
+        torch.save(y_hat, f'{self.logger.experiment.dir}/y_hat.pt')
+        torch.save(y_true, f'{self.logger.experiment.dir}/y_true.pt')
+        
 
     def standard_step(self, batch, step_type):
         x = batch['input']
