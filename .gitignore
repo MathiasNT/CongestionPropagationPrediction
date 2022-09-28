@@ -137,3 +137,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+configs/debug_config.yaml
+configs/informed_lstm_config.yaml
+configs/lstm_config.yaml
+configs/network_informed_lstm_config.yaml
+configs/standard_conifg.yaml
+configs/debug_config.yaml
+configs/informed_lstm_config.yaml
+configs/lstm_config.yaml
+configs/network_informed_lstm_config.yaml
