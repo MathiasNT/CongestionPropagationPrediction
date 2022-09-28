@@ -2,6 +2,7 @@ import torch
 
 from ..base_model_class import BaseModelClass
 
+
 class RnnModel(BaseModelClass):
     """Uninformed RNN baseline. 
 
@@ -13,7 +14,7 @@ class RnnModel(BaseModelClass):
     def __init__(self, config, learning_rate):
         super().__init__(config, learning_rate)
 
-        self.rnn = torch.nn.LSTM(input_size = config['rnn_input_size'],
+        self.rnn = torch.nn.LSTM(input_size = config['timeseries_in_size'],
                                     hidden_size = config['rnn_hidden_size'],
                                     batch_first=True)
 
@@ -24,10 +25,10 @@ class RnnModel(BaseModelClass):
         self.fc_end = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
         self.fc_speed = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
 
-    def forward(self, x, incident_info, network_info):
-        batch_size, time_steps, features = x.shape
+    def forward(self, inputs, incident_info, network_info):
+        batch_size, time_steps, features = inputs.shape
 
-        _, (hn, _) = self.rnn(x)
+        _, (hn, _) = self.rnn(inputs)
         hn = torch.relu(hn)
 
         hn_fc = self.fc_shared(hn)
@@ -55,13 +56,13 @@ class RnnInformedModel(BaseModelClass):
     def __init__(self, config, learning_rate):
         super().__init__(config, learning_rate)
 
-        self.rnn = torch.nn.LSTM(input_size = config['rnn_input_size'],
+        self.rnn = torch.nn.LSTM(input_size = config['timeseries_in_size'],
                                     hidden_size = config['rnn_hidden_size'],
                                     batch_first=True)
 
         self.fc_shared = torch.nn.Linear(in_features= config['rnn_hidden_size'], out_features=config['fc_hidden_size'])
 
-        self.fc_info = torch.nn.Linear(in_features=config['info_size'], out_features=config['fc_hidden_size'] )
+        self.fc_info = torch.nn.Linear(in_features=config['info_in_size'], out_features=config['fc_hidden_size'] )
 
         self.fc_inform = torch.nn.Linear(in_features=config['fc_hidden_size'] * 2, out_features=config['fc_hidden_size'])
 
@@ -70,10 +71,10 @@ class RnnInformedModel(BaseModelClass):
         self.fc_end = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
         self.fc_speed = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
 
-    def forward(self, x, incident_info, network_info):
-        batch_size, time_steps, features = x.shape
+    def forward(self, inputs, incident_info, network_info):
+        batch_size, time_steps, features = inputs.shape
 
-        _, (hn, _) = self.rnn(x)
+        _, (hn, _) = self.rnn(inputs)
         hn = torch.relu(hn)
 
         hn_fc = self.fc_shared(hn)
@@ -110,13 +111,13 @@ class RnnNetworkInformedModel(BaseModelClass):
     def __init__(self, config, learning_rate):
         super().__init__(config, learning_rate)
 
-        self.rnn = torch.nn.LSTM(input_size = config['rnn_input_size'],
+        self.rnn = torch.nn.LSTM(input_size = config['timeseries_in_size'],
                                     hidden_size = config['rnn_hidden_size'],
                                     batch_first=True)
 
         self.fc_shared = torch.nn.Linear(in_features= config['rnn_hidden_size'], out_features=config['fc_hidden_size'])
 
-        self.fc_info = torch.nn.Linear(in_features=config['info_size'] + config['network_info_size'], out_features=config['fc_hidden_size'] )
+        self.fc_info = torch.nn.Linear(in_features=config['info_in_size'] + config['network_in_size'], out_features=config['fc_hidden_size'] )
 
         self.fc_inform = torch.nn.Linear(in_features=config['fc_hidden_size'] * 2, out_features=config['fc_hidden_size'])
 
@@ -125,10 +126,10 @@ class RnnNetworkInformedModel(BaseModelClass):
         self.fc_end = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
         self.fc_speed = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
 
-    def forward(self, x, incident_info, network_info):
-        batch_size, time_steps, features = x.shape
+    def forward(self, inputs, incident_info, network_info):
+        batch_size, time_steps, features = inputs.shape
 
-        _, (hn, _) = self.rnn(x)
+        _, (hn, _) = self.rnn(inputs)
         hn = torch.relu(hn)
 
         hn_fc = self.fc_shared(hn)
@@ -183,10 +184,10 @@ class ExtendedRnnNetworkInformedModel(BaseModelClass):
         self.fc_end = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
         self.fc_speed = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
 
-    def forward(self, x, incident_info, network_info):
-        batch_size, time_steps, features = x.shape
+    def forward(self, inputs, incident_info, network_info):
+        batch_size, time_steps, features = inputs.shape
 
-        _, (hn, _) = self.rnn(x)
+        _, (hn, _) = self.rnn(inputs)
         hn = torch.relu(hn)
 
         hn_fc = self.fc_shared(hn)

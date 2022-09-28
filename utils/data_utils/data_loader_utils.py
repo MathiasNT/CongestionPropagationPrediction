@@ -152,5 +152,5 @@ class IncidentDataModule(pl.LightningDataModule):
                                       self.target_test,
                                       self.incident_info_test,
                                       self.network_info_test)
-        return DataLoader(test_split, batch_size=self.batch_size, num_workers=8)
+        return DataLoader(test_split, batch_size=self.batch_size, shuffle=False, num_workers=8)
 

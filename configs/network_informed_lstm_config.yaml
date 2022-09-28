@@ -1,11 +1,26 @@
-
+# Data settings
 scenario: motorway
 simulation_name: incident3
-model: informed_lstm
-incident_only: True
-lstm_input_size: 20 
-lstm_hidden_size: 32 
-fc_hidden_size: 16 
-info_size: 3
+form: independent
+
+# Logger setttings
+wandb_project: full_network_full_loss2
+wandb_name: network_informed_lstm_1
+debug: False
+
+# Training settings
+gpu: 0
 epochs: 2000
-debug: True
+batch_size: 1000
+infer_lr: True
+full_loss: True
+bce_pos_weight: 22.5178 # full: 22.5178 IE: 0.254
+random_seed: 41
+
+# Model settings
+model: network_informed_lstm
+timeseries_in_size: 20 
+rnn_hidden_size: 32 
+fc_hidden_size: 16 
+info_in_size: 3
+network_in_size: 1
