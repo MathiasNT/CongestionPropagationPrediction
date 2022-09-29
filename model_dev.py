@@ -1,6 +1,3 @@
-'''
-Quick n dirty script for debugging
-'''
 import yaml
 from argparse import ArgumentParser
 import pytorch_lightning as pl
@@ -15,12 +12,9 @@ from models.my_graph.mpnn import MLPDecoder
 from models.model_utils import load_configs, create_gnn_args
 from models.rose_models.lgf_model import SimpleGNN, InformedGNN
 
-if __name__ == '__main__':
-    # Load config yaml 
-    parser = ArgumentParser()
-    parser.add_argument('--config_path', type=str, help='Path to the config YAML', required=True)
-    args = parser.parse_args()
-    with open(args.config_path) as stream:
+
+def run_config(config_path):
+    with open(config_path) as stream:
         config_dict = yaml.safe_load(stream)
 
     config = load_configs(config_dict) 
@@ -28,8 +22,10 @@ if __name__ == '__main__':
 
     folder_path = f'{config["scenario"]}/Results/{config["simulation_name"]}'
 
+    debug_run = config['debug']
 
     # Seed for reproducibility
+    random_seed = config['random_seed'] # For easy overwrite of seed
     pl.seed_everything(config['random_seed'])
 
 
@@ -64,7 +60,7 @@ if __name__ == '__main__':
 
 
     # Init trainer
-    if config['debug']:
+    if debug_run:
         trainer = pl.Trainer(max_epochs = config['epochs'],
                             accelerator="gpu",
                             devices=[config['gpu']],
@@ -72,7 +68,8 @@ if __name__ == '__main__':
                             auto_lr_find=config['infer_lr']
                             )
     else:
-        wandb_logger = WandbLogger(project=config['wandb_project'], name=f"{config['wandb_name']}-{config['random_seed']}", save_dir='wandb_dir', log_model=True)
+        run_name = f"{config['wandb_name']}-{config['random_seed']}-"
+        wandb_logger = WandbLogger(project=config['wandb_project'], name=run_name, save_dir='wandb_dir', log_model=True)
         #wandb.watch(model)
         wandb_logger.log_hyperparams(config)
         trainer = pl.Trainer(max_epochs = config['epochs'],
@@ -83,11 +80,22 @@ if __name__ == '__main__':
                             )
 
     # Train model
-   # trainer.tune(model, datamodule=incident_data_module)
-    #trainer.fit(model=model,
-                #datamodule=incident_data_module,
-                #)
+    trainer.tune(model, datamodule=incident_data_module)
+    trainer.fit(model=model,
+                datamodule=incident_data_module,
+                )
     
     # Test model
-    trainer.test(model=model,
-                 datamodule=incident_data_module)
+    if not debug_run:
+        trainer.test(model=model, datamodule=incident_data_module)
+    
+    wandb_logger.finalize(status='Succes')
+    wandb.finish()
+
+if __name__ == '__main__':
+    # Load config yaml 
+    parser = ArgumentParser()
+    parser.add_argument('--config_paths', type=str, help='Path to the config YAML', nargs='+')
+    args = parser.parse_args()
+    for config in args.config_paths:
+        run_config(config)
