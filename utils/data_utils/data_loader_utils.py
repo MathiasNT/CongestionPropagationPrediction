@@ -30,7 +30,8 @@ class IncidentDataSet(Dataset):
     """Torch DataSet class that contains traffic data, inferred congestion backlogs and incident information
 
     Attributes:
-        input_data (torch.Tensor): [N_s, E, L, T_i, F] (Occupancy, Speed, NvehContrib, trig_time1, trig_time2) with traffic data before the incident
+        input_data (torch.Tensor): [N_s, E, L, T_i, F] (Occupancy, Speed, NvehContrib with traffic data before the incident
+        input_data_time (torch.Tensor): [N_s, E, L, T_i, F_time] (trig_time1, trig_time2)
         target_data (torch.Tensor): [N_s, E,4] with target data for ML (affected_bool, start_time, end_time, delta speed)
         incident_info (torch.Tensor): [N_s, 4] with incident info (incident edge, number of blocked lanes, slow zone speed, block duration)
         network_info (torch.Tensor): [N_s, E, 13] with network information (0: upstream/downstream level, 1-7: unused lanes mask, 8-13: padded lane mask)
@@ -108,7 +109,10 @@ class IncidentDataModule(pl.LightningDataModule):
 
         train_len = int(np.ceil(len(input_full) * self.train_frac))
         test_val_len = int(np.round((len(input_full) - train_len) * 0.5))
-        train_set, val_set, test_set = random_split(range(len(input_full)), [train_len, test_val_len,test_val_len])
+        train_set, val_set, test_set = random_split(range(len(input_full)),
+                                                    [train_len, test_val_len,test_val_len],
+                                                    generator=torch.Generator().manual_seed(1))
+
 
         transformed_input, self.transform_params = self.transform(train_set, input_full, padded_lane_mask)
 
