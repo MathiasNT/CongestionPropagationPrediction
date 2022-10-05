@@ -86,7 +86,7 @@ if __name__ == "__main__":
     # python .\traci_run.py --scenario urban --gui --begin 50000
     #incidents = ['360313821_0_50_50500_1200','360313821_1_50_50500_1200','360313821_2_50_50500_1200'] # Shows the need for rerouting
     scenario = 'motorway'
-    scenario_folder = f'C:/Users/mnity/Desktop/quick_adap_to_incidents/{scenario}'
+    scenario_folder = f'C:/Users/mnity/Desktop/quick_adap_to_incidents/Simulation_scenarios/{scenario}'
     
     incident_settings = IncidentSettings(run_num=0)
 

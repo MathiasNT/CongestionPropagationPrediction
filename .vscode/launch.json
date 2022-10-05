@@ -47,7 +47,7 @@
             "name": "TraCI GUI run",
             "type": "python",
             "request": "launch",
-            "program": "/home/manity/Quick_adap/quick_adap_to_incidents/utils/simulation_utils/TraCI_run.py",
+            "program": "utils/simulation_utils/TraCI_run.py",
             "console": "integratedTerminal",
             "justMyCode": true,
         },
