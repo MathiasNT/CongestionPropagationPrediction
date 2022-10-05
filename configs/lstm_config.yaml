@@ -4,15 +4,17 @@ simulation_name: incident3
 form: independent
 
 # Logger setttings
-wandb_project: full_network_full_Loss2
-wandb_name: lstm_1
+wandb_project: full_network_full_loss4
+wandb_name: lstm
 debug: False
 
 # Training settings
-gpu: 1
-epochs: 2000
+gpu: 0
+epochs: 1000
 batch_size: 1000
-infer_lr: True
+infer_lr: False
+learning_rate: 0.0003
+random_seed: 42
 full_loss: True
 bce_pos_weight: 22.5178 # full: 22.5178 IE: 0.254
 

@@ -60,7 +60,39 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "configs/debug_config.yaml"
+                "configs/debug_configs/debug_config.yaml",
+            ]
+        },
+        {
+            "name": "FULL Torch w. debug config",
+            "type": "python",
+            "request": "launch",
+            "program": "model_dev.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config_path",
+                "configs/debug_configs/debug_lstm_config.yaml",
+                "configs/debug_configs/debug_informed_lstm_config.yaml",
+                "configs/debug_configs/debug_network_informed_lstm_config.yaml",
+                "configs/debug_configs/debug_graph_config.yaml",
+                "configs/debug_configs/debug_informed_graph_config.yaml",
+            ]
+        },
+        {
+            "name": "actual scripts debug",
+            "type": "python",
+            "request": "launch",
+            "program": "model_dev.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config_path",
+                "configs/lstm_config.yaml",
+                "configs/informed_lstm_config.yaml",
+                "configs/network_informed_lstm_config.yaml",
+                "configs/graph_config.yaml",
+                "configs/informed_graph_config.yaml",
             ]
         },
     ]

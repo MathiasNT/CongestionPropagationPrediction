@@ -1,7 +1,6 @@
 # Ignore results folders
-*/Results/*
+*Results*
 *_temp*
-notebooks/*/Results/
 incident/*
 full_network_comp*
 incident_only_comp*
