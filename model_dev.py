@@ -5,6 +5,7 @@ from pytorch_lightning.loggers import WandbLogger
 import wandb
 import torch
 import numpy as np
+import datetime
 
 from utils.data_utils.data_loader_utils import IncidentDataModule
 from models.baselines.lstm import RnnInformedModel, RnnModel, RnnNetworkInformedModel
@@ -13,12 +14,7 @@ from models.model_utils import load_configs, create_gnn_args
 from models.rose_models.lgf_model import SimpleGNN, InformedGNN
 
 
-def run_config(config_path):
-    with open(config_path) as stream:
-        config_dict = yaml.safe_load(stream)
-
-    config = load_configs(config_dict) 
-
+def run_config(config):
 
     folder_path = f'{config["scenario"]}/Results/{config["simulation_name"]}'
 
@@ -68,7 +64,9 @@ def run_config(config_path):
                             auto_lr_find=config['infer_lr']
                             )
     else:
-        run_name = f"{config['wandb_name']}-{config['random_seed']}-"
+        now = datetime.datetime.now()
+        time_str = f'{now.day}-{now.month}-{now.hour}{now.minute}'
+        run_name = f"{config['wandb_name']}_{config['random_seed']}_{time_str}"
         wandb_logger = WandbLogger(project=config['wandb_project'], name=run_name, save_dir='wandb_dir', log_model=True)
         #wandb.watch(model)
         wandb_logger.log_hyperparams(config)
@@ -97,5 +95,14 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--config_paths', type=str, help='Path to the config YAML', nargs='+')
     args = parser.parse_args()
-    for config in args.config_paths:
+    configs = []
+    for config_path in args.config_paths:
+        
+        with open(config_path) as stream:
+            config_dict = yaml.safe_load(stream)
+
+        configs.append(load_configs(config_dict))
+        
+
+    for config in configs:
         run_config(config)
