@@ -1,5 +1,5 @@
-from .dotdict import DotDict
-from .xml2csv import AttrFinder, CSVWriter
+from ..dotdict import DotDict
+from ..ml_utils.result_utils.xml2csv import AttrFinder, CSVWriter
 import xml.sax
 import os
 import glob

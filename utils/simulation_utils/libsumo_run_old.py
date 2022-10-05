@@ -9,7 +9,7 @@ from multiprocessing import Process
 
 from simulation_utils.incident_utils import IncidentSettings, SUMOIncident, create_counterfactual
 from setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
-from utils.result_utils.file_utils import xml2csv_path
+from simulation_utils.file_utils import xml2csv_path
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')

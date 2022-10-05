@@ -11,8 +11,8 @@ import numpy as np
 
 from utils.simulation_utils.incident_utils import IncidentSettings, SUMOIncident, create_counterfactual
 from utils.simulation_utils.setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
-from utils.result_utils.file_utils import xml2csv_file
-from utils.data_utils.preprocess_utils import infer_incident_data
+from utils.simulation_utils.file_utils import xml2csv_file
+from utils.preprocess_utils import infer_incident_data
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -33,7 +33,7 @@ def get_args():
 
     arg_parser.add_argument("--n_random_incidents", type=int, default=0, help="The number of random incidents to simulate")
     arg_parser.add_argument("--n_non_incidents", type=int, default=0, help="The number of simulations without incident to run")
-    arg_parser.add_argument("--incident_settings_file", type=str, default=None, help="Path to the incident settings file")
+    arg_parser.add_argument("--incidents_settings_file", type=str, default=None, help="Path to the incident settings file")
 
     arg_parser.add_argument("--do_counterfactuals", action='store_true', default=False, help="For any incident run the counterfactual of no incident")
 
@@ -44,10 +44,10 @@ def get_args():
     arg_parser.add_argument("--data_frequency", type=int, default=10, help="The time resolution of the output files")
     args = arg_parser.parse_args()
 
-    if args.n_random_incidents == 0 and args.n_non_incidents == 0 and args.incident_settings_file is None:
+    if args.n_random_incidents == 0 and args.n_non_incidents == 0 and args.incidents_settings_file is None:
         raise Exception("Please set either number of random or non incidents or use a incidents settings file")
 
-    if (args.n_random_incidents == 0) + (args.n_non_incidents == 0) + (args.incident_settings_file is None) != 2:
+    if (args.n_random_incidents == 0) + (args.n_non_incidents == 0) + (args.incidents_settings_file is None) != 2:
         raise Exception("Please ONLY set either number of random or non incidents or use a incidents settings file")
     return args
 
@@ -150,9 +150,9 @@ if __name__ == "__main__":
         if args.do_counterfactuals:
             raise Exception('No reason to do counterfactuals without incidents')
 
-    elif args.incident_settings_file is not None:
-        print(f"Running simulations of scenario '{args.scenario}' using incidents in {args.incident_settings_file}")
-        with open(args.incident_settings_file, 'r') as f:
+    elif args.incidents_settings_file is not None:
+        print(f"Running simulations of scenario '{args.scenario}' using incidents in {args.incidents_settings_file}")
+        with open(args.incidents_settings_file, 'r') as f:
             incident_settings_dicts = json.load(f)
         print(f'Found settings{incident_settings_dicts}.')
         n_runs = len(incident_settings_dicts)
@@ -165,7 +165,7 @@ if __name__ == "__main__":
             for i in range(n_runs):
                 counterfactual_settings.append(create_counterfactual(incident_settings[i]))                  
 
-    scenario_folder = f'/home/manity/Quick_adap/quick_adap_to_incidents/{args.scenario}'
+    scenario_folder = f'/home/manity/Quick_adap/quick_adap_to_incidents/Simulation_scenarios/{args.scenario}'
 
     sim_settings = []
     jobs = []

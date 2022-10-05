@@ -7,7 +7,7 @@ import torch
 import numpy as np
 import datetime
 
-from utils.data_utils.data_loader_utils import IncidentDataModule
+from utils.ml_utils.data_utils.data_loader_utils import IncidentDataModule
 from models.baselines.lstm import RnnInformedModel, RnnModel, RnnNetworkInformedModel
 from models.my_graph.mpnn import MLPDecoder
 from models.model_utils import load_configs, create_gnn_args
@@ -16,7 +16,7 @@ from models.rose_models.lgf_model import SimpleGNN, InformedGNN
 
 def run_config(config):
 
-    folder_path = f'{config["scenario"]}/Results/{config["simulation_name"]}'
+    folder_path = f'Simulation_scenarios/{config["scenario"]}/Results/{config["simulation_name"]}'
 
     debug_run = config['debug']
 
@@ -27,7 +27,7 @@ def run_config(config):
 
     # Load data    
     incident_data_module = IncidentDataModule(folder_path = folder_path, batch_size = config['batch_size'])
-    if config['form'] == 'incident_only':
+    if config['form'] == 'incident_only': # TODO could do asserts for other cases as well
         assert config['model'] in ['lstm', 'informed_lstm'], 'Only LSTM baselines run on incident only'
 
     # Init model
@@ -86,9 +86,8 @@ def run_config(config):
     # Test model
     if not debug_run:
         trainer.test(model=model, datamodule=incident_data_module)
-    
-    wandb_logger.finalize(status='Succes')
-    wandb.finish()
+        wandb_logger.finalize(status='Succes')
+        wandb.finish()
 
 if __name__ == '__main__':
     # Load config yaml 

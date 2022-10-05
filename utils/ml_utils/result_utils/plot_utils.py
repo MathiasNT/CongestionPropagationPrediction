@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import torch
 
-from utils.result_utils.dotdict import DotDict
+from utils.dotdict import DotDict
  
 # Modified version of the plotNet in the sumolib python package
 #https://github.com/eclipse/sumo/blob/4f8605bda9efe8d13a2fc6fa78c47385412c1a5b/tools/sumolib/visualization/helpers.py

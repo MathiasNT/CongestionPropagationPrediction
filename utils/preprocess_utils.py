@@ -3,8 +3,8 @@ import numpy as np
 import sumolib
 import json
 
-from .network_utils import get_up_and_down_stream, get_edge_to_level_dict_numerical
-from .conversion_utils import trig_transform
+from .ml_utils.data_utils.network_utils import get_up_and_down_stream, get_edge_to_level_dict_numerical
+from .ml_utils.data_utils.conversion_utils import trig_transform
 
 
 def transform_df_to_tensor(df, interpolation_lim=5, warmup = 10):

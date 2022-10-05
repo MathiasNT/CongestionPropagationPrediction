@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Debug simulator pool rand incidents",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "libsumo_run_pool.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "subProcess": true,
@@ -25,10 +25,10 @@
             ]
         },
         {
-            "name": "Python: Current File2",
+            "name": "Debug simulator w. incident file",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "libsumo_run_pool.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "subProcess": true,
@@ -39,15 +39,15 @@
                 "debug_test",
                 "--verbose",
                 "--incidents_settings_file",
-                "/home/manity/Quick_adap/quick_adap_to_incidents/motorway/Sim_settings/incident1.json",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/Simulation_scenarios/motorway/Sim_settings/incident1.json",
                 "--incident_only",
             ]
         },
         {
-            "name": "Python: Current File gui",
+            "name": "TraCI GUI run",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "/home/manity/Quick_adap/quick_adap_to_incidents/utils/simulation_utils/TraCI_run.py",
             "console": "integratedTerminal",
             "justMyCode": true,
         },
@@ -55,7 +55,7 @@
             "name": "Torch w. debug config",
             "type": "python",
             "request": "launch",
-            "program": "model_dev.py",
+            "program": "model_train.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
@@ -67,7 +67,7 @@
             "name": "FULL Torch w. debug config",
             "type": "python",
             "request": "launch",
-            "program": "model_dev.py",
+            "program": "model_train.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
@@ -83,7 +83,7 @@
             "name": "actual scripts debug",
             "type": "python",
             "request": "launch",
-            "program": "model_dev.py",
+            "program": "model_train.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
