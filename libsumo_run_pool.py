@@ -9,10 +9,10 @@ from multiprocessing import Pool
 import json
 import numpy as np
 
-from utils.simulation_utils.incident_utils import IncidentSettings, SUMOIncident, create_counterfactual
-from utils.simulation_utils.setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
-from utils.simulation_utils.file_utils import xml2csv_file
-from utils.preprocess_utils import infer_incident_data
+from util_folder.simulation_utils.incident_utils import IncidentSettings, SUMOIncident, create_counterfactual
+from util_folder.simulation_utils.setup_utils import setup_counterfactual_sim, setup_incident_sim, cleanup_temp_files
+from util_folder.simulation_utils.file_utils import xml2csv_file
+from util_folder.preprocess_utils import infer_incident_data
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
