@@ -42,6 +42,7 @@ def get_args():
     arg_parser.add_argument("--verbose", action="store_true", default=False, help="Save error and message log of SUMO warnings and errors")
 
     arg_parser.add_argument("--data_frequency", type=int, default=10, help="The time resolution of the output files")
+    arg_parser.add_argument("--edge_data_bool", action='store_true', default=False, help="If SUMO edge data output is wanted.")
     args = arg_parser.parse_args()
 
     if args.n_random_incidents == 0 and args.n_non_incidents == 0 and args.incidents_settings_file is None:
@@ -95,16 +96,18 @@ def run(simulation_settings, start_time, end_time, incident_settings):
     sys.stdout = old_stdout
     if simulation_settings['counterfactual']:
         xml2csv_file(f'{simulation_settings["simulation_folder"]}/detectordata_counterfactual.xml')
-        xml2csv_file(f'{simulation_settings["simulation_folder"]}/edgedata_counterfactual.xml')
         os.remove(f'{simulation_settings["simulation_folder"]}/detectordata_counterfactual.xml')
-        os.remove(f'{simulation_settings["simulation_folder"]}/edgedata_counterfactual.xml')
+        if simulation_settings['edge_data_bool']:
+            xml2csv_file(f'{simulation_settings["simulation_folder"]}/edgedata_counterfactual.xml')
+            os.remove(f'{simulation_settings["simulation_folder"]}/edgedata_counterfactual.xml')
 
         print(f"Finished counterfactual for {simulation_settings['simulation_folder'].split('/')[-1]} in {end_wtime - start_wtime}")
     else:
         xml2csv_file(f'{simulation_settings["simulation_folder"]}/detectordata.xml')
-        xml2csv_file(f'{simulation_settings["simulation_folder"]}/edgedata.xml')
         os.remove(f'{simulation_settings["simulation_folder"]}/detectordata.xml')
-        os.remove(f'{simulation_settings["simulation_folder"]}/edgedata.xml')
+        if simulation_settings['edge_data_bool']:
+            xml2csv_file(f'{simulation_settings["simulation_folder"]}/edgedata.xml')
+            os.remove(f'{simulation_settings["simulation_folder"]}/edgedata.xml')
 
         print(f"Finished {simulation_settings['simulation_folder'].split('/')[-1]} in {end_wtime - start_wtime}")
 
@@ -118,6 +121,13 @@ def run(simulation_settings, start_time, end_time, incident_settings):
         #np.save(f'{simulation_settings["simulation_folder"]}/counter_data.npy', counter_data)
         #json.dump( ind_to_edge, open( "file_name.json", 'w' ) )
     #else:
+
+def safe_run(simulation_settings, start_time, end_time, incident_settings):
+    try:
+        return run(simulation_settings, start_time, end_time, incident_settings)
+    except Exception as e:
+        return e
+
 
 
 # main entry point
@@ -189,6 +199,7 @@ if __name__ == "__main__":
                       begin=simulation_start_time,
                       end=simulation_end_time,
                       trip_info=args.trip_info,
+                      edge_data_bool=args.edge_data_bool,
                       data_freq=args.data_frequency,
                       verbose=args.verbose
             )
@@ -205,6 +216,7 @@ if __name__ == "__main__":
                     begin=simulation_start_time,
                     end=simulation_end_time,
                     trip_info=args.trip_info,
+                    edge_data_bool=args.edge_data_bool,
                     data_freq=args.data_frequency,
                     verbose=args.verbose
                 )
@@ -213,7 +225,7 @@ if __name__ == "__main__":
             jobs.append((counterfactual_sim_settings[run_num], simulation_start_time, simulation_end_time, counterfactual_settings[run_num]))
      
     # TODO figure out what can be done about how to avoid killing the master when a thread gets an error
-    with Pool(os.cpu_count() - 4) as pool:
+    with Pool(os.cpu_count() - 24) as pool:
         print(f'Running {len(jobs)} simulations')
         if args.do_counterfactuals:
             print(f'with counterfactuals')

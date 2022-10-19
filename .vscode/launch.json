@@ -21,7 +21,8 @@
                 "--n_random_incidents",
                 "2",
                 "--incident_only",
-                "--do_counterfactuals"
+                "--do_counterfactuals",
+                "--edge_data_bool"
             ]
         },
         {
