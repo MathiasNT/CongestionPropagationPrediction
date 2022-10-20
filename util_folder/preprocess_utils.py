@@ -123,12 +123,13 @@ def find_congestion(residual_speed, lane_stds, length_lim, std_lim):
 
     return affected_edges, longest_affect_lengths, longest_affect_idxs
 
-def infer_incident_data(simulation_path):
+def infer_incident_data(simulation_paths):
     """Takes the detector data and incident information from a SUMO simulation at the given path and creates input and target data for congestion prediction.
 
     Args:
-        simulation_path (str): path to the folder with the detectordata.csv and detectordata_counterfactual.csv files 
-
+        simulation_paths (list):
+            0 path to the folder with the detectordata.csv and detectordata_counterfactual.csv files 
+            1 path to network file
     Returns:
         input_data (np.array): array w. shape [N_s, E, L, T_i, F] with input data for ML(T_i is time steps until incident) F = F_traffic + F_time
         target_data (np.array): array w. shape [N_s, E,4] with target data for ML
@@ -141,12 +142,12 @@ def infer_incident_data(simulation_path):
     """
 
     # Load incident information and data
-    with open(f'{simulation_path}/incident_settings.json') as f:
+    with open(f'{simulation_paths[0]}/incident_settings.json') as f:
         incident_settings = json.load(f)
     incident_edge = incident_settings['edge']
 
-    inci_df = pd.read_csv(f'{simulation_path}/detectordata.csv', sep=';')
-    counter_df = pd.read_csv(f'{simulation_path}/detectordata_counterfactual.csv', sep=';')
+    inci_df = pd.read_csv(f'{simulation_paths[0]}/detectordata.csv', sep=';')
+    counter_df = pd.read_csv(f'{simulation_paths[0]}/detectordata_counterfactual.csv', sep=';')
     
     min_inci_time = inci_df.interval_begin.min()
     max_inci_time = inci_df.interval_begin.max()
@@ -172,8 +173,7 @@ def infer_incident_data(simulation_path):
     residual_data = full_inci_data - full_counter_data
 
     # Load network information
-    scenario_folder = simulation_path.split('Results')[0]
-    net_path = f'{scenario_folder}/Simulations/Base/network.net.xml'
+    net_path = simulation_paths[1]
     net = sumolib.net.readNet(net_path)
     i_edge_obj = net.getEdge(incident_edge)
     edge_to_level_dict_num, upstream_edges, _, _= get_up_and_down_stream(i_edge_obj=i_edge_obj,

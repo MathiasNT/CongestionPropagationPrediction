@@ -41,7 +41,7 @@ def get_args():
 
     arg_parser.add_argument("--verbose", action="store_true", default=False, help="Save error and message log of SUMO warnings and errors")
 
-    arg_parser.add_argument("--data_frequency", type=int, default=10, help="The time resolution of the output files")
+    arg_parser.add_argument("--data_frequency", type=int, default=60, help="The time resolution of the output files")
     arg_parser.add_argument("--edge_data_bool", action='store_true', default=False, help="If SUMO edge data output is wanted.")
     args = arg_parser.parse_args()
 
@@ -225,7 +225,7 @@ if __name__ == "__main__":
             jobs.append((counterfactual_sim_settings[run_num], simulation_start_time, simulation_end_time, counterfactual_settings[run_num]))
      
     # TODO figure out what can be done about how to avoid killing the master when a thread gets an error
-    with Pool(os.cpu_count() - 24) as pool:
+    with Pool(os.cpu_count() - 4) as pool:
         print(f'Running {len(jobs)} simulations')
         if args.do_counterfactuals:
             print(f'with counterfactuals')
