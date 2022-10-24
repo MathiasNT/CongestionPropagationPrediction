@@ -7,8 +7,11 @@ import torch
 import numpy as np
 import datetime
 
-from utils.ml_utils.data_utils.data_loader_utils import IncidentDataModule
+from util_folder.ml_utils.data_utils.data_loader_utils import IncidentDataModule
 from models.baselines.lstm import RnnInformedModel, RnnModel, RnnNetworkInformedModel
+from models.baselines.mlp import MLPModel
+from models.baselines.temporal_cnn import TemporalCNNModel
+from models.baselines.lstm_attention import AttentionRNNModel
 from models.my_graph.mpnn import MLPDecoder
 from models.model_utils import load_configs, create_gnn_args
 from models.rose_models.lgf_model import SimpleGNN, InformedGNN
@@ -28,11 +31,20 @@ def run_config(config):
     # Load data    
     incident_data_module = IncidentDataModule(folder_path = folder_path, batch_size = config['batch_size'])
     if config['form'] == 'incident_only': # TODO could do asserts for other cases as well
-        assert config['model'] in ['lstm', 'informed_lstm'], 'Only LSTM baselines run on incident only'
+        assert config['model'] in ['lstm', 'informed_lstm', 'mlp'], 'Only LSTM baselines run on incident only'
 
     # Init model
+    if config['model'] == 'mlp':
+        model = MLPModel(config, learning_rate=config['learning_rate'])
+
     if config['model'] == 'lstm':
         model = RnnModel(config, learning_rate=config['learning_rate'])
+
+    if config['model'] == 'tcn':
+        model = TemporalCNNModel(config, learning_rate=config['learning_rate']) 
+
+    if config['model'] == 'attention':
+        model = AttentionRNNModel(config, learning_rate=config['learning_rate']) 
 
     elif config['model'] == 'informed_lstm':
         model = RnnInformedModel(config, learning_rate=config['learning_rate'])
