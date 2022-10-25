@@ -126,7 +126,7 @@ def safe_run(simulation_settings, start_time, end_time, incident_settings):
     try:
         return run(simulation_settings, start_time, end_time, incident_settings)
     except Exception as e:
-        return e
+        return e # TODO try not returning exception to se if that fixes the bug
 
 
 
@@ -229,7 +229,7 @@ if __name__ == "__main__":
         print(f'Running {len(jobs)} simulations')
         if args.do_counterfactuals:
             print(f'with counterfactuals')
-        pool.starmap(run, jobs)
+        pool.starmap(safe_run, jobs)
     
 
     cleanup_temp_files(scenario_folder=scenario_folder)
