@@ -62,6 +62,10 @@
             "args": [
                 "--config_path",
                 "configs/debug_configs/debug_config.yaml",
+                "--overwrite_random_seed",
+                "41",
+                "--overwrite_gpu",
+                "0"
             ]
         },
         {
@@ -89,11 +93,10 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "configs/lstm_config.yaml",
-                "configs/informed_lstm_config.yaml",
-                "configs/network_informed_lstm_config.yaml",
-                "configs/graph_config.yaml",
-                "configs/informed_graph_config.yaml",
+                "configs/baseline_run/attention.yaml",
+                "configs/baseline_run/lstm.yaml",
+                "configs/baseline_run/mlp.yaml",
+                "configs/baseline_run/tcn.yaml",
             ]
         },
     ]

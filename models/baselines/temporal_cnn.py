@@ -46,7 +46,7 @@ class TemporalCNNModel(BaseModelClass):
         num_levels = len(config['num_channels'])
 
         for i in range(num_levels):
-            dilation_size = 2 ** 1
+            dilation_size = 2 ** i
             in_channels = config['cnn_in_size'] if i == 0 else config['num_channels'][i - 1]
             out_channels = config['num_channels'][i]
             layers += [TemporalBlock(n_inputs=in_channels,

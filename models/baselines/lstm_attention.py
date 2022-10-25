@@ -16,10 +16,12 @@ class AttentionRNNModel(BaseModelClass):
         super().__init__(config, learning_rate)
 
         self.rnn = nn.LSTM(input_size = config['timeseries_in_size'],
-                                    hidden_size = config['rnn_hidden_size'],
-                                    batch_first=True)
+                           hidden_size = config['rnn_hidden_size'], 
+                           batch_first=True)
 
-        self.attention = nn.MultiheadAttention(embed_dim=32, num_heads=1, batch_first=True)
+        self.attention = nn.MultiheadAttention(embed_dim=config['rnn_hidden_size'], 
+                                               num_heads=config['attention_num_heads'], 
+                                               batch_first=True)
 
         self.fc_shared = nn.Linear(in_features= config['rnn_hidden_size'], out_features=config['fc_hidden_size'])
 
