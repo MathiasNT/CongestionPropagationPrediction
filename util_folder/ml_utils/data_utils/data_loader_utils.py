@@ -105,6 +105,12 @@ class IncidentDataModule(pl.LightningDataModule):
         incident_info_full = torch.Tensor(incident_info_full)
         network_info_full = torch.Tensor(network_info_full)
 
+        print(f'*** DATA SUMMARY: ***')
+        print(f'{input_full.shape=}')
+        print(f'{target_full.shape=}')
+        print(f'{incident_info_full.shape=}')
+        print(f'{network_info_full.shape=}\n')
+
         padded_lane_mask = torch.BoolTensor(network_info_full[:,:,7:] > 0)
 
         train_len = int(np.ceil(len(input_full) * self.train_frac))
