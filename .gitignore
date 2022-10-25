@@ -136,15 +136,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-configs/debug_config.yaml
-configs/informed_lstm_config.yaml
-configs/lstm_config.yaml
-configs/network_informed_lstm_config.yaml
-configs/standard_conifg.yaml
-configs/debug_config.yaml
-configs/informed_lstm_config.yaml
-configs/lstm_config.yaml
-configs/network_informed_lstm_config.yaml
+
+
+
 configs/debug_config.yaml
 configs/informed_lstm_config.yaml
 configs/lstm_config.yaml
@@ -152,3 +146,8 @@ configs/network_informed_lstm_config.yaml
 configs/standard_conifg.yaml
 notebooks/real_world_data/events_201206_new.csv
 notebooks/real_world_data/sensors_201206.csv
+notebooks/real_world_data/graph_sensor_locations.csv
+notebooks/real_world_data/metr-la.h5
+notebooks/real_world_data/test.npz
+notebooks/real_world_data/train.npz
+notebooks/real_world_data/val.npz
