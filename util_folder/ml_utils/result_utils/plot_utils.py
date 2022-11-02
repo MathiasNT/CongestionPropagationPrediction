@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import torch
 
-from utils.dotdict import DotDict
+from util_folder.dotdict import DotDict
  
 # Modified version of the plotNet in the sumolib python package
 #https://github.com/eclipse/sumo/blob/4f8605bda9efe8d13a2fc6fa78c47385412c1a5b/tools/sumolib/visualization/helpers.py
@@ -119,7 +119,7 @@ def plot_net_w_logits(y_hat, seq_num, incident_info, ind_to_edge, net, ax):
     edge_colors = {}
     logits = y_hat[seq_num][...,0]
 
-    widths = {ie_id:20}
+    widths = {ie_id:10}
         
     plot_options = {'defaultColor': 'black',
                     'defaultWidth': 2}
