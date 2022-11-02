@@ -93,10 +93,27 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "configs/baseline_run/attention.yaml",
-                "configs/baseline_run/lstm.yaml",
-                "configs/baseline_run/mlp.yaml",
-                "configs/baseline_run/tcn.yaml",
+                "configs/baseline_run_long_test/dcrnn.yaml",
+                "--overwrite_random_seed",
+                "1",
+                "--overwrite_gpu",
+                "1"
+            ]
+        },
+        {
+            "name": "actual test debug",
+            "type": "python",
+            "request": "launch",
+            "program": "model_test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config_path",
+                "configs/baseline_run_long/mlp.yaml",
+                "configs/baseline_run_long/lstm.yaml",
+                "configs/baseline_run_long/attention.yaml",
+                "configs/baseline_run_long/tcn.yaml",
+                "configs/baseline_run_long/dcrnn.yaml",
             ]
         },
     ]

@@ -1,6 +1,14 @@
+import torch
+import numpy as np
 
 from doctest import DocTestRunner
 
+from models.rose_models.lgf_model import SimpleGNN, InformedGNN
+from models.baselines.lstm import RnnInformedModel, RnnModel, RnnNetworkInformedModel
+from models.baselines.mlp import MLPModel
+from models.baselines.temporal_cnn import TemporalCNNModel
+from models.baselines.lstm_attention import AttentionRNNModel, InformedAttentionRNNModel, NetworkInformedAttentionRNNModel
+from models.my_graph.mpnn import MLPDecoder
 
 class DotDict(dict):
     """dot.notation access to dictionary attributes"""
@@ -41,3 +49,46 @@ def create_gnn_args(config):
     }
 
     return DotDict(temp_dict)
+
+
+
+def init_model(config):
+    if config['model'] == 'mlp':
+        model = MLPModel(config, learning_rate=config['learning_rate'])
+
+    if config['model'] == 'lstm':
+        model = RnnModel(config, learning_rate=config['learning_rate'])
+
+    if config['model'] == 'tcn':
+        model = TemporalCNNModel(config, learning_rate=config['learning_rate']) 
+
+    if config['model'] == 'attention':
+        model = AttentionRNNModel(config, learning_rate=config['learning_rate']) 
+
+    elif config['model'] == 'informed_lstm':
+        model = RnnInformedModel(config, learning_rate=config['learning_rate'])
+    
+    elif config['model'] == 'network_informed_lstm':
+        model = RnnNetworkInformedModel(config, learning_rate=config['learning_rate'])
+
+    elif config['model'] == 'informed_attention':
+        model = InformedAttentionRNNModel(config, learning_rate=config['learning_rate'])
+    
+    elif config['model'] == 'network_informed_attention':
+        model = NetworkInformedAttentionRNNModel(config, learning_rate=config['learning_rate'])
+
+    elif config['model'] == 'mpnn_gcn':
+        adj_mx =  torch.Tensor(np.load(config['AD_path']))
+        model = MLPDecoder(adj_mx=adj_mx, config=config, learning_rate=config['learning_rate'])
+
+    elif config['model'] == 'gnn':
+        gnn_args = create_gnn_args(config)
+        adj_mx =  torch.Tensor(np.load(config['AD_path']))
+        model = SimpleGNN(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=1e-3) 
+
+    elif config['model'] == 'informed_gnn':
+        gnn_args = create_gnn_args(config)
+        adj_mx =  torch.Tensor(np.load(config['AD_path']))
+        model = InformedGNN(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=1e-3) 
+
+    return model

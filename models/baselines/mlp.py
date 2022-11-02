@@ -13,7 +13,7 @@ class MLPModel(BaseModelClass):
         super().__init__(config, learning_rate)
         self.relu = nn.ReLU() 
         self.mlp = nn.Sequential(
-            nn.Linear(config['mlp_in_size'], config['mlp_hidden_size']),
+            nn.Linear(config['timeseries_in_size'] * config['n_timesteps'], config['mlp_hidden_size']),
             self.relu,
             nn.Linear(config['mlp_hidden_size'], config['mlp_hidden_size']),
             self.relu,

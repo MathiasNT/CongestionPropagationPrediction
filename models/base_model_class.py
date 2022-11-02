@@ -1,8 +1,13 @@
 
 import pytorch_lightning as pl
 import torch
-import torchmetrics
+from torch import nn
+from torchmetrics import MeanAbsolutePercentageError, Accuracy
+from torchmetrics.classification import BinaryF1Score
 from torchmetrics.functional import precision_recall
+
+from util_folder.ml_utils.result_utils.metric_utils import masked_mape
+
 
 class BaseModelClass(pl.LightningModule):
     """Lightning module base for RNN based models.
@@ -21,10 +26,19 @@ class BaseModelClass(pl.LightningModule):
         self.full_loss = config['full_loss']
         self.bce_pos_weight = torch.Tensor([config['bce_pos_weight']])
 
-        self.bce_loss_func = torch.nn.BCEWithLogitsLoss(pos_weight=self.bce_pos_weight)
-        self.mse_loss_func = torch.nn.MSELoss()
-        self.acc_func = torchmetrics.Accuracy()
+        self.bce_loss_func = nn.BCEWithLogitsLoss(pos_weight=self.bce_pos_weight)
+        self.mse_loss_func = nn.MSELoss()
+        self.mape_loss_func = MeanAbsolutePercentageError()
+        self.mae_loss_func = nn.L1Loss()
+        self.acc_func = Accuracy()
+        self.f1_func = BinaryF1Score()
 
+        self.seed = config['random_seed']
+
+        if 'results_dir' in config.keys():
+            self.results_dir = config['results_dir']
+        else:
+            self.results_dir = None
 
 
     def training_step(self, batch, batch_idx):
@@ -45,6 +59,9 @@ class BaseModelClass(pl.LightningModule):
         torch.save(y_hat, f'{self.logger.experiment.dir}/y_hat.pt')
         torch.save(y_true, f'{self.logger.experiment.dir}/y_true.pt')
         
+        if self.results_dir is not None:
+            torch.save(y_hat, f'{self.results_dir}/y_hat_{self.seed}.pt')
+            torch.save(y_true, f'{self.results_dir}/y_true_{self.seed}.pt')
 
     def standard_step(self, batch, step_type):
         x = batch['input']
@@ -72,17 +89,18 @@ class BaseModelClass(pl.LightningModule):
         else:
             loss = bce_loss        
 
-        accuracy = self.acc_func(y_hat[...,0], y_true[...,0].int())
-        precision, recall = precision_recall(y_hat[...,0], y_true[...,0].int())
+        metrics_dict = self.calc_metrics(y_hat, y_true, step_type)
 
         self.log(f'{step_type}/loss', loss, on_step=False, on_epoch=True)
         self.log(f'{step_type}/bce_loss', bce_loss, on_step=False,  on_epoch=True)
         self.log(f'{step_type}/start_loss', start_loss, on_step=False,  on_epoch=True)
         self.log(f'{step_type}/end_loss', end_loss, on_step=False,  on_epoch=True)
         self.log(f'{step_type}/speed_loss', speed_loss, on_step=False,  on_epoch=True)
-        self.log(f'{step_type}/accuracy', accuracy, on_step=False,  on_epoch=True)
-        self.log(f'{step_type}/precision', precision, on_step=False,  on_epoch=True)
-        self.log(f'{step_type}/recall', recall, on_step=False,  on_epoch=True)
+        self.log_dict(metrics_dict, on_step=False, on_epoch=True)
+        #self.log(f'{step_type}/accuracy', accuracy, on_step=False,  on_epoch=True) TODO clean up
+        #self.log(f'{step_type}/precision', precision, on_step=False,  on_epoch=True)
+        #self.log(f'{step_type}/recall', recall, on_step=False,  on_epoch=True)
+        #self.log(f'{step_type}/f1', f1, on_step=False,  on_epoch=True)
         return loss, y_hat.detach(), y_true.detach()
 
     def calculate_losses(self, y_hat, y):
@@ -93,7 +111,22 @@ class BaseModelClass(pl.LightningModule):
         speed_loss = self.mse_loss_func(y_hat[...,3], y[...,3])
         return bce_loss, start_loss, end_loss, speed_loss
 
+    def calc_metrics(self, y_hat, y, step_type):
+        assert y_hat.shape == y.shape, "Shapes do not match"
 
+        metric_dict = {}
+
+        metric_dict[f'{step_type}/accuracy'] = self.acc_func(y_hat[...,0], y[...,0].int())
+        metric_dict[f'{step_type}/f1'] = self.f1_func(y_hat[...,0], y[...,0].int())
+        metric_dict[f'{step_type}/prec'], metric_dict['rec'] = precision_recall(y_hat[...,0], y[...,0].int())
+
+        # Masked MAPE
+        metric_dict[f'{step_type}/start_Mmape'] = masked_mape(y_hat[...,1], y[...,1])
+        metric_dict[f'{step_type}/end_Mmape'] = masked_mape(y_hat[...,2], y[...,2])
+        metric_dict[f'{step_type}/speed_Mmape'] = masked_mape(y_hat[...,3], y[...,3])
+
+        return metric_dict
+        
     def reshape_inputs(self, x, time, incident_info, network_info, batch_incident_mask):
         batch_size, n_nodes, n_lanes, n_timesteps, n_obs_features = x.shape
         n_time_features = time.shape[-1]

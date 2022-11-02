@@ -124,13 +124,12 @@ class SimpleGNN(BaseModelClass, Seq2SeqAttrs):
 
     encoder_hidden_state = None
     for t in range(self.input_len):
-      # if torch.any(torch.isnan(inputs[t])):
-      #     print('encoder time step', t)
       next_hidden_state, encoder_hidden_state = self.timeseries_encoder(inputs[t], encoder_hidden_state)
 
     next_hidden_state = self.activation(next_hidden_state)
 
     hn_fc = self.fc_shared(next_hidden_state)
+    hn_fc = self.activation(hn_fc)
 
     class_logit = self.fc_classifier(hn_fc)
 

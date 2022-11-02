@@ -6,6 +6,9 @@ full_network_comp*
 incident_only_comp*
 wandb*
 configs/*
+saved_models*
+*.png
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -151,3 +154,4 @@ notebooks/real_world_data/metr-la.h5
 notebooks/real_world_data/test.npz
 notebooks/real_world_data/train.npz
 notebooks/real_world_data/val.npz
+notebooks/real_world_data/TrafficEvents_Aug16_Dec20_Publish.tar.gz
