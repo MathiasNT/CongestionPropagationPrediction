@@ -49,12 +49,12 @@ def init_model(config):
     elif config['model'] == 'gnn':
         gnn_args = create_gnn_args(config)
         adj_mx =  torch.Tensor(np.load(config['AD_path']))
-        model = SimpleGNN(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=1e-3) 
+        model = SimpleGNN(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate']) 
 
     elif config['model'] == 'informed_gnn':
         gnn_args = create_gnn_args(config)
         adj_mx =  torch.Tensor(np.load(config['AD_path']))
-        model = InformedGNN(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=1e-3) 
+        model = InformedGNN(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate']) 
 
     return model
 

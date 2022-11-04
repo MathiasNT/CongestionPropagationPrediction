@@ -127,7 +127,6 @@ class SimpleGNN(BaseModelClass, Seq2SeqAttrs):
       next_hidden_state, encoder_hidden_state = self.timeseries_encoder(inputs[t], encoder_hidden_state)
 
     next_hidden_state = self.activation(next_hidden_state)
-
     hn_fc = self.fc_shared(next_hidden_state)
     hn_fc = self.activation(hn_fc)
 
@@ -201,10 +200,96 @@ class InformedGNN(BaseModelClass, Seq2SeqAttrs):
     encoder_hidden_state = None
     for t in range(self.input_len):
       next_hidden_state, encoder_hidden_state = self.timeseries_encoder(inputs[t], encoder_hidden_state)
+
     timeseries_hidden_state = self.activation(next_hidden_state)
     timeseries_hn_fc = self.fc_timeseries(timeseries_hidden_state)
     timeseries_hn_fc = self.activation(timeseries_hn_fc)
 
+    encoder_hidden_state = None
+    incident_hidden_state, encoder_hidden_state = self.incident_encoder(network_info, encoder_hidden_state)
+    incident_hn_fc = self.fc_incident(incident_hidden_state)
+    incident_hn_fc = self.activation(incident_hn_fc)
+
+    hn_fc = self.fc_shared(torch.cat([timeseries_hn_fc, incident_hn_fc], dim=-1))
+
+
+
+    class_logit = self.fc_classifier(hn_fc)
+
+    start_pred = self.fc_start(hn_fc)
+    end_pred = self.fc_end(hn_fc)
+
+    speed_pred = self.fc_speed(hn_fc)
+
+    y_hat = torch.cat([class_logit, start_pred, end_pred, speed_pred], dim=-1).squeeze()
+    return y_hat
+
+
+class InformedGNN_v2(BaseModelClass, Seq2SeqAttrs):
+  """Lightning module for Latent Graph Forecaster model.
+  Attributes:
+    adj_mx: initialize if learning the graph, load the graph if known
+    encoder: encoder module
+    decoder: decoder module
+  """
+
+  def __init__(self,
+               adj_mx,
+               args,
+               learning_rate,
+               config):
+    super().__init__(config, learning_rate)
+    Seq2SeqAttrs.__init__(self, args)
+
+    print('initialize graph')
+
+    self.register_buffer('adj_mx', adj_mx)
+
+    self.activation = torch.tanh
+
+    self.timeseries_encoder = Encoder(self.adj_mx, args)
+    self.fc_timeseries = nn.Linear(in_features=config['rnn_hidden_size'], out_features=config['fc_hidden_size'])
+
+    args.use_gc_ru = False # TODO fix this hack
+    args.input_dim = config['network_in_size']
+    self.incident_encoder = Encoder(self.adj_mx, args)
+    self.fc_incident = nn.Linear(in_features=config['rnn_hidden_size'], out_features=config['fc_hidden_size'])
+    
+    self.fc_shared = nn.Linear(in_features=config['fc_hidden_size'] * 2, out_features=config['fc_hidden_size'])
+    self.fc_classifier = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
+    self.fc_start = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
+    self.fc_end = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
+    self.fc_speed = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
+
+  def forward(self,
+              inputs,
+               incident_info,
+               network_info
+              ):
+    """LGF forward pass.
+    Args:
+        inputs: [seq_len, batch_size, num_nodes, input_dim]
+        labels: [horizon, batch_size, num_nodes, output_dim]
+        batches_seen: batches seen till now
+    Returns:
+        output: [self.horizon, batch_size, self.num_nodes,
+        self.output_dim]
+    """
+
+    # reshape [batch, seq_len, num_nodes, dim]
+    #           -- > [seq_len, batch, num_nodes, dim]
+
+    inputs = inputs.permute(2, 0, 1, 3)
+
+    encoder_hidden_state = None
+    for t in range(self.input_len):
+      next_hidden_state, encoder_hidden_state = self.timeseries_encoder(inputs[t], encoder_hidden_state)
+
+    timeseries_hidden_state = self.activation(next_hidden_state)
+    timeseries_hn_fc = self.fc_timeseries(timeseries_hidden_state)
+    timeseries_hn_fc = self.activation(timeseries_hn_fc)
+
+    
     encoder_hidden_state = None
     incident_hidden_state, encoder_hidden_state = self.incident_encoder(network_info, encoder_hidden_state)
     incident_hn_fc = self.fc_incident(incident_hidden_state)

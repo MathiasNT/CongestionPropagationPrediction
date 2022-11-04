@@ -118,7 +118,7 @@ class BaseModelClass(pl.LightningModule):
 
         metric_dict[f'{step_type}/accuracy'] = self.acc_func(y_hat[...,0], y[...,0].int())
         metric_dict[f'{step_type}/f1'] = self.f1_func(y_hat[...,0], y[...,0].int())
-        metric_dict[f'{step_type}/prec'], metric_dict['rec'] = precision_recall(y_hat[...,0], y[...,0].int())
+        metric_dict[f'{step_type}/prec'], metric_dict[f'{step_type}/rec'] = precision_recall(y_hat[...,0], y[...,0].int())
 
         # Masked MAPE
         metric_dict[f'{step_type}/start_Mmape'] = masked_mape(y_hat[...,1], y[...,1])
