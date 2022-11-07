@@ -7,8 +7,9 @@ from torchmetrics.classification import BinaryF1Score
 from torchmetrics.functional import precision_recall
 
 from util_folder.ml_utils.result_utils.metric_utils import masked_mape
-
-
+from util_folder.ml_utils.loss_utils import UpstreamBCELoss
+        
+            
 class BaseModelClass(pl.LightningModule):
     """Lightning module base for RNN based models.
 
@@ -16,14 +17,14 @@ class BaseModelClass(pl.LightningModule):
     I.e. This removes any spatial information.
     """
 
-    def __init__(self, config, learning_rate):
+    def __init__(self, config, learning_rate, pos_weights=None):
         super().__init__()
         self.learning_rate = learning_rate
         self.form = config['form']
         assert self.form in ['incident_only', 'independent', 'graph'], 'Please select prober data form' # TODO test
         
 
-        self.full_loss = config['full_loss']
+        self.loss_type = config['loss_type']
         self.bce_pos_weight = torch.Tensor([config['bce_pos_weight']])
 
         self.bce_loss_func = nn.BCEWithLogitsLoss(pos_weight=self.bce_pos_weight)
@@ -33,7 +34,12 @@ class BaseModelClass(pl.LightningModule):
         self.acc_func = Accuracy()
         self.f1_func = BinaryF1Score()
 
+        if self.loss_type == 'upstream_loss':
+            self.upstream_bce_loss_func = UpstreamBCELoss(pos_weights=pos_weights)
+
         self.seed = config['random_seed']
+
+        self.transform_network_info_bool = config['transform_network_info']
 
         if 'results_dir' in config.keys():
             self.results_dir = config['results_dir']
@@ -68,12 +74,17 @@ class BaseModelClass(pl.LightningModule):
         time = batch['time']
         y_true = batch['target']
         incident_info = batch['incident_info']
-        network_info = batch['network_info']
+        network_info = batch['network_info'].clone()
 
         batch_size = x.shape[0]
-        batch_incident_mask = (network_info[:,:, 0] == 0)
+        batch_incident_mask = (network_info[:,:, 0] == 0) # Done before transform of network info so allways the same
 
         x, incident_info, network_info = self.reshape_inputs(x, time, incident_info, network_info, batch_incident_mask)
+
+        # TODO make sure the transform of the network info works for al transforms 
+        # (IE_only, parrallel and graph)
+        if self.transform_network_info_bool:
+            network_info = self.transform_network_info(network_info=network_info)
 
         y_hat = self.forward(inputs=x,
                              incident_info=incident_info,
@@ -84,9 +95,13 @@ class BaseModelClass(pl.LightningModule):
 
         bce_loss, start_loss, end_loss, speed_loss = self.calculate_losses(y_hat, y_true)
 
-        if self.full_loss:
+        if self.loss_type == 'full':
             loss = bce_loss + start_loss + end_loss + speed_loss 
-        else:
+        elif self.loss_type == 'upstream_loss':
+            upstream_bce_loss = self.upstream_bce_loss_func(y_hat[...,0], y_true[...,0], batch['network_info'][...,0])
+            loss = upstream_bce_loss + start_loss + end_loss + speed_loss
+            self.log(f'{step_type}/upstream_bce_loss', upstream_bce_loss, on_step=False,  on_epoch=True)
+        elif self.loss_type == 'bce_only':
             loss = bce_loss        
 
         metrics_dict = self.calc_metrics(y_hat, y_true, step_type)
@@ -156,6 +171,16 @@ class BaseModelClass(pl.LightningModule):
             network_info = network_info[...,0].reshape(-1)
 
         return x, incident_info, network_info
+    
+
+    def transform_network_info(self, network_info):
+        inci_net_info = network_info[...,0]
+        local_upstream_mask = inci_net_info.le(0) & inci_net_info.ge(-30)
+        inci_net_info[local_upstream_mask] = torch.exp(0.25*inci_net_info[local_upstream_mask])
+        inci_net_info[~local_upstream_mask] = 0
+        network_info[...,0] = inci_net_info
+        return network_info
+
 
     def reshape_targets(self, y_hat, y_true, batch_incident_mask, batch_size):
         # Mask regression prediction for all edges classified as unaffected
