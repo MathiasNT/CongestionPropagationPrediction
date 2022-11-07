@@ -34,8 +34,9 @@ class ScaleNormalize:
         masked_input = train_input[~lane_mask[train_set.indices]]
         input_min = masked_input.view(-1, masked_input.shape[-1]).min(0).values
         input_max = masked_input.view(-1, masked_input.shape[-1]).max(0).values
-        scaled_input_obs = (input_obs_full - input_min) / (input_max - input_min) 
         input_param_dict = {'min': input_min, 'max': input_max} 
+
+        scaled_input_obs = (input_obs_full - input_min) / (input_max - input_min) 
 
         # Normalize target TODO think about if the affected mask would help?
         target_full_reg = target_full[...,1:]
@@ -43,11 +44,12 @@ class ScaleNormalize:
         train_target_reg = target_full_reg[train_set.indices]        
         target_min = train_target_reg.view(-1, train_target_reg.shape[-1]).min(0).values
         target_max = train_target_reg.view(-1, train_target_reg.shape[-1]).max(0).values
-        scaled_target_full_reg = (target_full_reg - target_min) / (target_max - target_min) 
+        target_param_dict = {'min': target_min, 'max': target_max}
+
+        scaled_target_full_reg = (target_full_reg - target_min) / (target_max - target_min)
         scaled_target_full_reg[...,-1] *= -1
         target_full[...,1:] = scaled_target_full_reg
         scaled_target_full = target_full
-        target_param_dict = {'min': target_min, 'max': target_max}
         
         # Normalize incident_info
         incident_info_full_edge = incident_info_full[...,1:]        
@@ -55,10 +57,11 @@ class ScaleNormalize:
         incident_info_min = train_incident_info_edge.view(-1, train_incident_info_edge.shape[-1]).min(0).values
         incident_info_min[1] = 0 # TODO fix hotfix by adding noise to data
         incident_info_max = train_incident_info_edge.view(-1, train_incident_info_edge.shape[-1]).max(0).values
+        incident_info_param_dict = {'min': incident_info_min, 'max': incident_info_max}
+
         scaled_incident_info_full_edge = (incident_info_full_edge - incident_info_min) / (incident_info_max - incident_info_min)
         incident_info_full[...,1:] = scaled_incident_info_full_edge
         scaled_incident_info_full = incident_info_full
-        incident_info_param_dict = {'min': incident_info_min, 'max': incident_info_max}
 
         # Scale network info - used for indexing so no normalize here. 
         scaled_network_info_full = network_info_full
@@ -125,7 +128,7 @@ class IncidentDataModule(pl.LightningDataModule):
 
     """
 
-    def __init__(self, folder_path, transform, train_frac=0.6,  batch_size=32):
+    def __init__(self, folder_path, transform, spatial_test, train_frac=0.6,  batch_size=32):
         super().__init__()
         self.batch_size = batch_size
         self.folder_path = folder_path
@@ -135,6 +138,8 @@ class IncidentDataModule(pl.LightningDataModule):
             self.transform = Standardize()
         elif transform == 'scalenormalize':
             self.transform = ScaleNormalize()
+
+        self.spatial_test = spatial_test
         
 
     def prepare_data(self):
@@ -151,6 +156,11 @@ class IncidentDataModule(pl.LightningDataModule):
 
         n_obs_full = len(input_full)
         
+
+
+
+
+        
         print(f'*** DATA SUMMARY: ***')
         print(f'{input_obs_full.shape=}')
         print(f'{input_time_full.shape=}')
@@ -166,6 +176,16 @@ class IncidentDataModule(pl.LightningDataModule):
                                                     [train_len, test_val_len,test_val_len],
                                                     generator=torch.Generator().manual_seed(1))
 
+        if self.spatial_test: 
+            self.test_edge_idxs = torch.tensor([80, 81, 79, 53, 59, 64]) 
+            ## ['4414080#0.187', '4414080#0.756', '4414080#0', '332655581', '360361373-AddedOffRampEdge', '360361373.2643' ]
+            spatial_test_mask = sum(incident_info_full[...,0] == edge_idx for edge_idx in self.test_edge_idxs)
+            spatial_test_obs_idxs = torch.where(spatial_test_mask == 1)[0]
+
+            train_set.indices = [x for x in train_set.indices if x not in spatial_test_obs_idxs]
+            val_set.indices = [x for x in val_set.indices if x not in spatial_test_obs_idxs]
+            test_set.indices = [x for x in test_set.indices if x not in spatial_test_obs_idxs]
+            test_set.indices += spatial_test_obs_idxs
 
         # Normalize the data
         padded_lane_mask = torch.BoolTensor(network_info_full[:,:,7:] == 0)

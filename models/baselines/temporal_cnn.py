@@ -38,8 +38,8 @@ class TemporalCNNModel(BaseModelClass):
 
     OBS: Current implementation takes out the sensor on the edge with the incident.
     """
-    def __init__(self, config, learning_rate):
-        super().__init__(config, learning_rate)
+    def __init__(self, config, learning_rate, pos_weights):
+        super().__init__(config, learning_rate, pos_weights)
 
         layers = []
 

@@ -83,8 +83,8 @@ class SimpleGNN(BaseModelClass, Seq2SeqAttrs):
                adj_mx,
                args,
                learning_rate,
-               config):
-    super().__init__(config, learning_rate)
+               config, pos_weights):
+    super().__init__(config, learning_rate, pos_weights)
     Seq2SeqAttrs.__init__(self, args)
 
     print('initialize graph')
@@ -152,8 +152,8 @@ class InformedGNN(BaseModelClass, Seq2SeqAttrs):
                adj_mx,
                args,
                learning_rate,
-               config):
-    super().__init__(config, learning_rate)
+               config, pos_weights):
+    super().__init__(config, learning_rate, pos_weights)
     Seq2SeqAttrs.__init__(self, args)
 
     print('initialize graph')
@@ -508,7 +508,7 @@ class InformedGNN_v3(BaseModelClass, Seq2SeqAttrs):
     encoder_hidden_state = None
 
     info = incident_info[:,1:]   # selecting number of blocked lanes, slow zone speed and duration and startime 
-    info_mask = torch.nn.functional.one_hot(incident_info[...,0].to(torch.int64)).bool()
+    info_mask = torch.nn.functional.one_hot(incident_info[...,0].to(torch.int64), num_classes = num_nodes).bool()
     padded_info = torch.zeros(batch_size, num_nodes, info.shape[-1], device=self.device)
     padded_info[info_mask] = info
 

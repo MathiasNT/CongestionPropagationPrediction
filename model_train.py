@@ -42,9 +42,9 @@ def init_model(config, pos_weights):
     elif config['model'] == 'network_informed_attention':
         model = NetworkInformedAttentionRNNModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
 
-    elif config['model'] == 'mpnn_gcn':
-        adj_mx =  torch.Tensor(np.load(config['AD_path']))
-        model = MLPDecoder(adj_mx=adj_mx, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
+    #elif config['model'] == 'mpnn_gcn':
+        #adj_mx =  torch.Tensor(np.load(config['AD_path']))
+        #model = k(adj_mx=adj_mx, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
 
     elif config['model'] == 'gnn':
         gnn_args = create_gnn_args(config)
@@ -94,7 +94,8 @@ def run_config(config, overwrite_random_seed, overwrite_gpu):
     # Load data    
     incident_data_module = IncidentDataModule(folder_path = folder_path, 
                                               transform=config['transform'], 
-                                              batch_size = config['batch_size'])
+                                              batch_size = config['batch_size'],
+                                              spatial_test=config['spatial_test'])
     incident_data_module.setup()
     if config['form'] == 'incident_only': # TODO could do asserts for other cases as well
         assert config['model'] in ['lstm', 'informed_lstm', 'mlp'], 'Only LSTM baselines run on incident only'

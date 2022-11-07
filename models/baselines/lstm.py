@@ -11,8 +11,8 @@ class RnnModel(BaseModelClass):
 
     OBS: Current implementation takes out the sensor on the edge with the incident.
     """
-    def __init__(self, config, learning_rate):
-        super().__init__(config, learning_rate)
+    def __init__(self, config, learning_rate, pos_weights):
+        super().__init__(config, learning_rate, pos_weights)
 
         self.rnn = torch.nn.LSTM(input_size = config['timeseries_in_size'],
                                     hidden_size = config['rnn_hidden_size'],
@@ -53,8 +53,8 @@ class RnnInformedModel(BaseModelClass):
 
     OBS: Current implementation only looks at the sensor closest to the incident.
     """
-    def __init__(self, config, learning_rate):
-        super().__init__(config, learning_rate)
+    def __init__(self, config, learning_rate, pos_weights):
+        super().__init__(config, learning_rate, pos_weights)
 
         self.rnn = torch.nn.LSTM(input_size = config['timeseries_in_size'],
                                     hidden_size = config['rnn_hidden_size'],
@@ -108,8 +108,8 @@ class RnnNetworkInformedModel(BaseModelClass):
 
     OBS: Current implementation only looks at the sensor closest to the incident.
     """
-    def __init__(self, config, learning_rate):
-        super().__init__(config, learning_rate)
+    def __init__(self, config, learning_rate, pos_weights):
+        super().__init__(config, learning_rate, pos_weights)
 
         self.rnn = torch.nn.LSTM(input_size = config['timeseries_in_size'],
                                     hidden_size = config['rnn_hidden_size'],

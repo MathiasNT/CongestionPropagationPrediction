@@ -9,8 +9,8 @@ class MLPModel(BaseModelClass):
 
     MLP model that sees each detector as a vector input and independently tries to predict for each of them.
     """
-    def __init__(self, config, learning_rate):
-        super().__init__(config, learning_rate)
+    def __init__(self, config, learning_rate, pos_weights):
+        super().__init__(config, learning_rate, pos_weights)
         self.relu = nn.ReLU() 
         self.mlp = nn.Sequential(
             nn.Linear(config['timeseries_in_size'] * config['n_timesteps'], config['mlp_hidden_size']),
