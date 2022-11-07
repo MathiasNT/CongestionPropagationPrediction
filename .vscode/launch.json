@@ -93,7 +93,7 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "configs/baseline_run_long_test/dcrnn.yaml",
+                "configs/informed_baseline_run/informed_dcrnn_v2.yaml",
                 "--overwrite_random_seed",
                 "1",
                 "--overwrite_gpu",

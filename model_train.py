@@ -13,48 +13,64 @@ from models.baselines.lstm import RnnInformedModel, RnnModel, RnnNetworkInformed
 from models.baselines.mlp import MLPModel
 from models.baselines.temporal_cnn import TemporalCNNModel
 from models.baselines.lstm_attention import AttentionRNNModel, InformedAttentionRNNModel, NetworkInformedAttentionRNNModel
-from models.my_graph.mpnn import MLPDecoder
+from models.my_graph.mpnn import MPNN
 from models.model_utils import load_configs, create_gnn_args
-from models.rose_models.lgf_model import SimpleGNN, InformedGNN
+from models.rose_models.LGF_model import SimpleGNN, InformedGNN, InformedGNN_v2, InformedGNN_v3, InformedGNN_v4
 
-def init_model(config):
+def init_model(config, pos_weights):
     if config['model'] == 'mlp':
-        model = MLPModel(config, learning_rate=config['learning_rate'])
+        model = MLPModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
 
     if config['model'] == 'lstm':
-        model = RnnModel(config, learning_rate=config['learning_rate'])
+        model = RnnModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
 
     if config['model'] == 'tcn':
-        model = TemporalCNNModel(config, learning_rate=config['learning_rate']) 
+        model = TemporalCNNModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
 
     if config['model'] == 'attention':
-        model = AttentionRNNModel(config, learning_rate=config['learning_rate']) 
+        model = AttentionRNNModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
 
     elif config['model'] == 'informed_lstm':
-        model = RnnInformedModel(config, learning_rate=config['learning_rate'])
+        model = RnnInformedModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
     
     elif config['model'] == 'network_informed_lstm':
-        model = RnnNetworkInformedModel(config, learning_rate=config['learning_rate'])
+        model = RnnNetworkInformedModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
 
     elif config['model'] == 'informed_attention':
-        model = InformedAttentionRNNModel(config, learning_rate=config['learning_rate'])
+        model = InformedAttentionRNNModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
     
     elif config['model'] == 'network_informed_attention':
-        model = NetworkInformedAttentionRNNModel(config, learning_rate=config['learning_rate'])
+        model = NetworkInformedAttentionRNNModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
 
     elif config['model'] == 'mpnn_gcn':
         adj_mx =  torch.Tensor(np.load(config['AD_path']))
-        model = MLPDecoder(adj_mx=adj_mx, config=config, learning_rate=config['learning_rate'])
+        model = MLPDecoder(adj_mx=adj_mx, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
 
     elif config['model'] == 'gnn':
         gnn_args = create_gnn_args(config)
         adj_mx =  torch.Tensor(np.load(config['AD_path']))
-        model = SimpleGNN(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate']) 
+        model = SimpleGNN(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
 
     elif config['model'] == 'informed_gnn':
         gnn_args = create_gnn_args(config)
         adj_mx =  torch.Tensor(np.load(config['AD_path']))
-        model = InformedGNN(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate']) 
+        model = InformedGNN(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
+
+    elif config['model'] == 'informed_gnn_v2':
+        gnn_args = create_gnn_args(config)
+        adj_mx =  torch.Tensor(np.load(config['AD_path']))
+        model = InformedGNN_v2(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
+
+    elif config['model'] == 'informed_gnn_v3':
+        gnn_args = create_gnn_args(config)
+        adj_mx =  torch.Tensor(np.load(config['AD_path']))
+        model = InformedGNN_v3(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
+
+    elif config['model'] == 'informed_gnn_v4':
+        gnn_args = create_gnn_args(config)
+        adj_mx =  torch.Tensor(np.load(config['AD_path']))
+        model = InformedGNN_v4(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
+
 
     return model
 
@@ -76,12 +92,15 @@ def run_config(config, overwrite_random_seed, overwrite_gpu):
         config['gpu'] = overwrite_gpu
 
     # Load data    
-    incident_data_module = IncidentDataModule(folder_path = folder_path, batch_size = config['batch_size'])
+    incident_data_module = IncidentDataModule(folder_path = folder_path, 
+                                              transform=config['transform'], 
+                                              batch_size = config['batch_size'])
+    incident_data_module.setup()
     if config['form'] == 'incident_only': # TODO could do asserts for other cases as well
         assert config['model'] in ['lstm', 'informed_lstm', 'mlp'], 'Only LSTM baselines run on incident only'
 
     # Init model
-    model = init_model(config)
+    model = init_model(config=config, pos_weights=incident_data_module.pos_weights)
 
     # Init trainer
     if debug_run:

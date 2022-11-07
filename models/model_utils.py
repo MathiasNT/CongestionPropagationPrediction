@@ -3,12 +3,12 @@ import numpy as np
 
 from doctest import DocTestRunner
 
-from models.rose_models.lgf_model import SimpleGNN, InformedGNN
+from models.rose_models.LGF_model import SimpleGNN, InformedGNN
 from models.baselines.lstm import RnnInformedModel, RnnModel, RnnNetworkInformedModel
 from models.baselines.mlp import MLPModel
 from models.baselines.temporal_cnn import TemporalCNNModel
 from models.baselines.lstm_attention import AttentionRNNModel, InformedAttentionRNNModel, NetworkInformedAttentionRNNModel
-from models.my_graph.mpnn import MLPDecoder
+from models.my_graph.mpnn import MPNN
 
 class DotDict(dict):
     """dot.notation access to dictionary attributes"""
