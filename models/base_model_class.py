@@ -7,7 +7,7 @@ from torchmetrics.classification import BinaryF1Score
 from torchmetrics.functional import precision_recall
 
 from util_folder.ml_utils.result_utils.metric_utils import masked_mape
-from util_folder.ml_utils.loss_utils import UpstreamBCELoss
+from util_folder.ml_utils.loss_utils import UpstreamBCELoss, UpstreamFocalLoss
         
             
 class BaseModelClass(pl.LightningModule):
@@ -34,8 +34,11 @@ class BaseModelClass(pl.LightningModule):
         self.acc_func = Accuracy()
         self.f1_func = BinaryF1Score()
 
-        if self.loss_type == 'upstream_loss':
+        # TODO fix this refactor
+        if self.loss_type in ['upstream_loss', 'upstream_loss_only']:
             self.upstream_bce_loss_func = UpstreamBCELoss(pos_weights=pos_weights)
+        if self.loss_type in ['upstream_focal_loss', 'upstream_focal_loss_only']:
+            self.upstream_bce_loss_func = UpstreamFocalLoss(pos_weights=pos_weights, gamma = torch.tensor([2])) # TODO Give gamma as feature
 
         self.seed = config['random_seed']
 
@@ -95,14 +98,35 @@ class BaseModelClass(pl.LightningModule):
 
         bce_loss, start_loss, end_loss, speed_loss = self.calculate_losses(y_hat, y_true)
 
+        # TODO refactor this into to parameters
         if self.loss_type == 'full':
             loss = bce_loss + start_loss + end_loss + speed_loss 
+
         elif self.loss_type == 'upstream_loss':
             upstream_bce_loss = self.upstream_bce_loss_func(y_hat[...,0], y_true[...,0], batch['network_info'][...,0])
             loss = upstream_bce_loss + start_loss + end_loss + speed_loss
             self.log(f'{step_type}/upstream_bce_loss', upstream_bce_loss, on_step=False,  on_epoch=True)
+            
+        elif self.loss_type == 'upstream_focal_loss':
+            upstream_bce_loss = self.upstream_bce_loss_func(y_hat[...,0], y_true[...,0], batch['network_info'][...,0])
+            loss = upstream_bce_loss + start_loss + end_loss + speed_loss
+            self.log(f'{step_type}/upstream_bce_loss', upstream_bce_loss, on_step=False,  on_epoch=True)
+           
         elif self.loss_type == 'bce_only':
             loss = bce_loss        
+
+        elif self.loss_type == 'upstream_loss_only':
+            upstream_bce_loss = self.upstream_bce_loss_func(y_hat[...,0], y_true[...,0], batch['network_info'][...,0])
+            loss = upstream_bce_loss
+            self.log(f'{step_type}/upstream_bce_loss', upstream_bce_loss, on_step=False,  on_epoch=True)
+
+        elif self.loss_type == 'upstream_focal_loss_only':
+            upstream_bce_loss = self.upstream_bce_loss_func(y_hat[...,0], y_true[...,0], batch['network_info'][...,0])
+            loss = upstream_bce_loss
+            self.log(f'{step_type}/upstream_bce_loss', upstream_bce_loss, on_step=False,  on_epoch=True)
+
+        else:
+            raise ValueError('Please give a loss function')
 
         metrics_dict = self.calc_metrics(y_hat, y_true, step_type)
 
@@ -112,10 +136,6 @@ class BaseModelClass(pl.LightningModule):
         self.log(f'{step_type}/end_loss', end_loss, on_step=False,  on_epoch=True)
         self.log(f'{step_type}/speed_loss', speed_loss, on_step=False,  on_epoch=True)
         self.log_dict(metrics_dict, on_step=False, on_epoch=True)
-        #self.log(f'{step_type}/accuracy', accuracy, on_step=False,  on_epoch=True) TODO clean up
-        #self.log(f'{step_type}/precision', precision, on_step=False,  on_epoch=True)
-        #self.log(f'{step_type}/recall', recall, on_step=False,  on_epoch=True)
-        #self.log(f'{step_type}/f1', f1, on_step=False,  on_epoch=True)
         return loss, y_hat.detach(), y_true.detach()
 
     def calculate_losses(self, y_hat, y):
@@ -131,9 +151,9 @@ class BaseModelClass(pl.LightningModule):
 
         metric_dict = {}
 
-        metric_dict[f'{step_type}/accuracy'] = self.acc_func(y_hat[...,0], y[...,0].int())
-        metric_dict[f'{step_type}/f1'] = self.f1_func(y_hat[...,0], y[...,0].int())
-        metric_dict[f'{step_type}/prec'], metric_dict[f'{step_type}/rec'] = precision_recall(y_hat[...,0], y[...,0].int())
+        metric_dict[f'{step_type}/accuracy'] = self.acc_func(torch.sigmoid(y_hat[...,0]), y[...,0].int())
+        metric_dict[f'{step_type}/f1'] = self.f1_func(torch.sigmoid(y_hat[...,0]), y[...,0].int())
+        metric_dict[f'{step_type}/prec'], metric_dict[f'{step_type}/rec'] = precision_recall(torch.sigmoid(y_hat[...,0]), y[...,0].int())
 
         # Masked MAPE
         metric_dict[f'{step_type}/start_Mmape'] = masked_mape(y_hat[...,1], y[...,1])
@@ -158,7 +178,6 @@ class BaseModelClass(pl.LightningModule):
             x = x.reshape(batch_size, n_nodes, n_timesteps, n_lanes * n_obs_features)
             time = time[:,:,0,:,:]
             x = torch.cat([x, time], dim=-1)
-            # TODO figure out what to do with the network_info and incident info
     
         elif self.form == 'independent':
             x = x.permute(0,1,3,2,4)            

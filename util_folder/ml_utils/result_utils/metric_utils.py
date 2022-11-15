@@ -1,6 +1,7 @@
 import torch
 import torchmetrics
 from torchmetrics.classification import BinaryF1Score
+from torch.nn.functional import sigmoid
 import pandas as pd
 
 def calc_aggregates(test_dict, model_names, random_seeds):
@@ -101,10 +102,10 @@ class MetricObj:
 
         # Classification metrics
 
-        class_dict['bce'] = self.bce_loss_func(y_hat[...,0], y_true[...,0])
-        class_dict['acc'] = self.acc_func(y_hat[...,0], y_true[...,0].int())
-        class_dict['f1'] = self.f1_func(y_hat[...,0], y_true[...,0].int())
-        precision, recall = self.precision_recall(y_hat[...,0], y_true[...,0].int())
+        class_dict['bce'] = self.bce_loss_func(sigmoid(y_hat[...,0]), y_true[...,0])
+        class_dict['acc'] = self.acc_func(sigmoid(y_hat[...,0]), y_true[...,0].int())
+        class_dict['f1'] = self.f1_func(sigmoid(y_hat[...,0]), y_true[...,0].int())
+        precision, recall = self.precision_recall(sigmoid(y_hat[...,0]), y_true[...,0].int())
         class_dict['prcsn'] = precision
         class_dict['rcll'] = recall
 

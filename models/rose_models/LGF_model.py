@@ -453,7 +453,7 @@ class InformedGNN_v3(BaseModelClass, Seq2SeqAttrs):
 
     )
 
-    args.use_gc_ru = False # TODO fix this hack
+    args.use_gc_ru = True # TODO fix this hack
 
     self.mlp_net_info = nn.Sequential(
       nn.Linear(in_features=config['network_in_size'] + config['info_in_size'],
@@ -566,7 +566,7 @@ class InformedGNN_v4(BaseModelClass, Seq2SeqAttrs):
       nn.Linear(in_features=config['fc_hidden_size'], out_features=config['rnn_hidden_size']),
     )
 
-    args.use_gc_ru = False # TODO fix this hack
+    args.use_gc_ru = True # TODO fix this hack
 
     self.mlp_net_info = nn.Sequential(
       nn.Linear(in_features=config['network_in_size'] + config['info_in_size'],

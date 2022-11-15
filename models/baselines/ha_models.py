@@ -44,7 +44,7 @@ class HA_model_v1():
     def __init__(self, train_dataset, emulated_dataset_size = None, random_seed=42):
         self.hist_incident_info = train_dataset.incident_info
         self.hist_net_info = train_dataset.network_info[:,:,0]
-        self.hist_ie_times = train_dataset.input_data_time[:,0,0,14,:]
+        self.hist_ie_times = train_dataset.input_time_data[:,0,0,14,:]
         self.hist_targets = train_dataset.target_data
 
         if emulated_dataset_size is not None:

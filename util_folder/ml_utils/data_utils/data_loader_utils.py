@@ -70,6 +70,12 @@ class ScaleNormalize:
 
         return scaled_input_obs, scaled_target_full, scaled_incident_info_full, scaled_network_info_full
 
+    def renormalize_targets(self, target):
+        rescaled_reg_vars = (target[...,1:] * (self.params['target']['max'] - self.params['target']['min']) + self.params['target']['min'])
+        rescaled_target = torch.cat([target[...,0].unsqueeze(-1), rescaled_reg_vars], dim=-1)
+        return rescaled_target        
+
+
 
 class IncidentDataSet(Dataset):
     """Torch DataSet class that contains traffic data, inferred congestion backlogs and incident information

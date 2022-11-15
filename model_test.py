@@ -18,43 +18,43 @@ def test_config(config, overwrite_random_seed, overwrite_gpu):
 
     # Seed for reproducibility
     if overwrite_random_seed is not None: 
-        random_seed = overwrite_random_seed
-    else:
-        random_seed = config['random_seed'] # For easy overwrite of seed
-    pl.seed_everything(random_seed)
+        config['random_seed'] = overwrite_random_seed
+    pl.seed_everything(config['random_seed'])
 
     # Overwrite gpu for easier scripting
     if overwrite_gpu is not None:
-        gpu = overwrite_gpu
-    else:
-        gpu = config['gpu']
+        config['gpu'] = overwrite_gpu
 
     # Load data    
-    incident_data_module = IncidentDataModule(folder_path = folder_path, batch_size = config['batch_size'])
+    incident_data_module = IncidentDataModule(folder_path = folder_path, 
+                                              transform=config['transform'], 
+                                              batch_size = config['batch_size'],
+                                              spatial_test=config['spatial_test'])
+    incident_data_module.setup()
     if config['form'] == 'incident_only': # TODO could do asserts for other cases as well
         assert config['model'] in ['lstm', 'informed_lstm', 'mlp'], 'Only LSTM baselines run on incident only'
 
     # Init model
-    model = init_model(config)
+    model = init_model(config=config, pos_weights=incident_data_module.pos_weights)
 
     # Init trainer
     if debug_run:
         trainer = pl.Trainer(max_epochs = config['epochs'],
                             accelerator="gpu",
-                            devices=[gpu],
+                            devices=[config['gpu']],
                             fast_dev_run=True,
                             auto_lr_find=config['infer_lr']
                             )
     else:
         now = datetime.datetime.now()
         time_str = f'{now.day}-{now.month}-{now.hour}{now.minute}'
-        run_name = f"{config['wandb_name']}_{random_seed}_{time_str}"
+        run_name = f"{config['wandb_name']}_{config['random_seed']}_{time_str}"
         wandb_logger = WandbLogger(project=config['wandb_project']+'_test', name=run_name, save_dir='wandb_dir', log_model=True)
         #wandb.watch(model)
         wandb_logger.log_hyperparams(config)
         trainer = pl.Trainer(max_epochs = config['epochs'],
                             accelerator="gpu",
-                            devices=[gpu], 
+                            devices=[config['gpu']], 
                             logger=wandb_logger,
                             auto_lr_find=config['infer_lr']
                             )
