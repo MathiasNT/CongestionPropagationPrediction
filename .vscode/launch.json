@@ -93,10 +93,7 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "configs/informed_baseline_run2/informed_lstm.yaml",
-                "configs/informed_baseline_run2/informed_attention.yaml",
-                "configs/informed_baseline_run2/network_informed_lstm.yaml",
-                "configs/informed_baseline_run2/network_informed_attention.yaml",
+                "configs/informed_class_only/informed_mpnn.yaml",
                 "--overwrite_random_seed",
                 "1",
                 "--overwrite_gpu",
@@ -112,11 +109,7 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "configs/baseline_run_long/mlp.yaml",
-                "configs/baseline_run_long/lstm.yaml",
-                "configs/baseline_run_long/attention.yaml",
-                "configs/baseline_run_long/tcn.yaml",
-                "configs/baseline_run_long/dcrnn.yaml",
+                "configs/informed_baseline_run2_test/informed_dcrnn_v2.yaml",
             ]
         },
     ]

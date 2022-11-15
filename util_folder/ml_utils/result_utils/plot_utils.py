@@ -1,6 +1,7 @@
 from matplotlib.collections import LineCollection
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.colors as mcolors
 import torch
 
 from util_folder.dotdict import DotDict
@@ -126,3 +127,31 @@ def plot_net_w_logits(y_hat, seq_num, incident_info, ind_to_edge, net, ax):
     plot_options = DotDict(plot_options)
     plotNet_colormap(net, array=logits, widths=widths, options=plot_options, incident_edge_obj=None, ax=ax)
     return ax
+
+
+def plotNet_colormap_w_norm(net, array, widths, options, ax, area=None, norm=None, cmap='Reds'):
+    shapes = []
+    w = []
+    for e in net._edges:
+        shapes.append(e.getShape())
+        if e._id in widths:
+            w.append(widths[str(e._id)])
+        else:
+            w.append(options.defaultWidth)
+
+    line_segments = LineCollection(shapes, linewidths=w, array=array, cmap=cmap, norm=norm)
+    ax.add_collection(line_segments)
+    ax.set_xmargin(0)
+    ax.set_ymargin(0)
+
+    #if incident_edge_obj is not None: 
+        #(xmin, ymin, xmax, ymax) = incident_edge_obj.getBoundingBox()
+    if area is not None:
+        ax.set_xlim(area['xmin'] ,area['xmax'])
+        ax.set_ylim(area['ymin'] ,area['ymax'])
+    #elif incident_edge_obj is not None:
+        #ax.set_xlim(xmin - margin ,xmax + margin)
+        #ax.set_ylim(ymin - margin ,ymax + margin)
+    #else: 
+        #ax.autoscale_view(True, True, True)
+    return ax, line_segments
