@@ -93,11 +93,11 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "configs/informed_class_only/informed_mpnn.yaml",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/debug_configs/nri_dev.yaml",
                 "--overwrite_random_seed",
                 "1",
                 "--overwrite_gpu",
-                "1"
+                "0"
             ]
         },
         {

@@ -9,6 +9,7 @@ from models.baselines.mlp import MLPModel
 from models.baselines.temporal_cnn import TemporalCNNModel
 from models.baselines.lstm_attention import AttentionRNNModel, InformedAttentionRNNModel, NetworkInformedAttentionRNNModel
 from models.MPNN_models.mpnn_model import InformedMPNNModel
+from models.MPNN_models.nri_model import NRI_v1
 
 
 class DotDict(dict):
@@ -106,5 +107,8 @@ def init_model(config, pos_weights):
     elif config['model'] == 'informed_mpnn':
         adj_mx =  torch.Tensor(np.load(config['AD_path']))
         model = InformedMPNNModel(adj_mx=adj_mx, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
+
+    elif config['model'] == 'nri':
+        model = NRI_v1(config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
 
     return model
