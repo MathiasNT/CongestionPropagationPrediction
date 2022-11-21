@@ -4,18 +4,10 @@ from argparse import ArgumentParser
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 import wandb
-import torch
-import numpy as np
 import datetime
 
 from util_folder.ml_utils.data_utils.data_loader_utils import IncidentDataModule
-from models.baselines.lstm import RnnInformedModel, RnnModel, RnnNetworkInformedModel
-from models.baselines.mlp import MLPModel
-from models.baselines.temporal_cnn import TemporalCNNModel
-from models.baselines.lstm_attention import AttentionRNNModel, InformedAttentionRNNModel, NetworkInformedAttentionRNNModel
-from models.my_graph.mpnn import MPNN
-from models.model_utils import load_configs, create_gnn_args, init_model
-from models.rose_models.LGF_model import SimpleGNN, InformedGNN, InformedGNN_v2, InformedGNN_v3, InformedGNN_v4
+from models.model_utils import load_configs, init_model
 
 
 
@@ -38,7 +30,9 @@ def run_config(config, overwrite_random_seed, overwrite_gpu):
     incident_data_module = IncidentDataModule(folder_path = folder_path, 
                                               transform=config['transform'], 
                                               batch_size = config['batch_size'],
-                                              spatial_test=config['spatial_test'])
+                                              spatial_test=config['spatial_test'],
+                                              subset_size=config['subset_size'],
+                                              min_impact_threshold=config['min_impact_threshold'])
     incident_data_module.setup()
     if config['form'] == 'incident_only': # TODO could do asserts for other cases as well
         assert config['model'] in ['lstm', 'informed_lstm', 'mlp'], 'Only LSTM baselines run on incident only'
@@ -66,13 +60,13 @@ def run_config(config, overwrite_random_seed, overwrite_gpu):
                             devices=[config['gpu']], 
                             logger=wandb_logger,
                             auto_lr_find=config['infer_lr'],
+                            gradient_clip_val=0.5
                             )
 
     # Train model
-
     trainer.tune(model, datamodule=incident_data_module)
     
-    if 'checkpoint_path' in config:
+    if 'checkpoint_path' in config: # This is for loading a checkpoint
         trainer.fit(model=model,
                     datamodule=incident_data_module,
                     ckpt_path=config['checkpoint_path']

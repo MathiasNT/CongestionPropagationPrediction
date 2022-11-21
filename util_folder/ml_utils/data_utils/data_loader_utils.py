@@ -134,11 +134,13 @@ class IncidentDataModule(pl.LightningDataModule):
 
     """
 
-    def __init__(self, folder_path, transform, spatial_test, train_frac=0.6,  batch_size=32):
+    def __init__(self, folder_path, transform, spatial_test, train_frac=0.6,  batch_size=32, subset_size=None, min_impact_threshold=None, verbose=True):
         super().__init__()
         self.batch_size = batch_size
         self.folder_path = folder_path
         self.train_frac = train_frac
+        self.subset_size = subset_size
+        self.min_impact_threshold = min_impact_threshold
 
         if transform == 'standardize':
             self.transform = Standardize()
@@ -146,6 +148,8 @@ class IncidentDataModule(pl.LightningDataModule):
             self.transform = ScaleNormalize()
 
         self.spatial_test = spatial_test
+
+        self.verbose = verbose
         
 
     def prepare_data(self):
@@ -163,16 +167,32 @@ class IncidentDataModule(pl.LightningDataModule):
         n_obs_full = len(input_full)
         
 
+        if self.subset_size is not None:
+            input_full = input_full[:self.subset_size]
+            input_obs_full = input_obs_full[:self.subset_size]
+            input_time_full = input_time_full[:self.subset_size]
+            target_full = target_full[:self.subset_size]
+            incident_info_full = incident_info_full[:self.subset_size]
+            network_info_full = network_info_full[:self.subset_size]
+            n_obs_full = len(input_full)
 
+        if self.min_impact_threshold is not None:
+            threshold_mask = target_full[...,0].sum(1) > self.min_impact_threshold
+            input_full = input_full[threshold_mask]
+            input_obs_full = input_obs_full[threshold_mask]
+            input_time_full = input_time_full[threshold_mask]
+            target_full = target_full[threshold_mask]
+            incident_info_full = incident_info_full[threshold_mask]
+            network_info_full = network_info_full[threshold_mask]
+            n_obs_full = len(input_full)
 
-
-        
-        print(f'*** DATA SUMMARY: ***')
-        print(f'{input_obs_full.shape=}')
-        print(f'{input_time_full.shape=}')
-        print(f'{target_full.shape=}')
-        print(f'{incident_info_full.shape=}')
-        print(f'{network_info_full.shape=}\n')
+        if self.verbose:
+            print(f'*** DATA SUMMARY: ***')
+            print(f'{input_obs_full.shape=}')
+            print(f'{input_time_full.shape=}')
+            print(f'{target_full.shape=}')
+            print(f'{incident_info_full.shape=}')
+            print(f'{network_info_full.shape=}\n')
 
 
         # Generate the train, val and test split idxs
@@ -183,7 +203,7 @@ class IncidentDataModule(pl.LightningDataModule):
                                                     generator=torch.Generator().manual_seed(1))
 
         if self.spatial_test: 
-            self.test_edge_idxs = torch.tensor([80, 81, 79, 53, 59, 64]) 
+            self.test_edge_idxs = torch.tensor([80, 81, 79, 53, 59, 64, 128, 15, 14, 100, 102, 101, 82, 83, 84, 85]) 
             ## ['4414080#0.187', '4414080#0.756', '4414080#0', '332655581', '360361373-AddedOffRampEdge', '360361373.2643' ]
             spatial_test_mask = sum(incident_info_full[...,0] == edge_idx for edge_idx in self.test_edge_idxs)
             spatial_test_obs_idxs = torch.where(spatial_test_mask == 1)[0]
@@ -235,12 +255,14 @@ class IncidentDataModule(pl.LightningDataModule):
             pos_weight = (target_class[mask] == 0).sum() / target_class[mask].sum()
             pos_weights.append(pos_weight)
         self.pos_weights = torch.tensor(pos_weights)
+        self.pos_weights[self.pos_weights == float('Inf')] = 1 # If no pos at that level set to 1 as that corresponds to no reweighting
 
         # This part should be moved to preprocessing
         # But for now we calculate the positive weight of the classification problem
         self.full_pos_weight = (self.target_train[...,0] == 0).sum() / self.target_train[...,0].sum()
         incident_edge_target = self.target_train[(self.network_info_train[...,0] == 0)]
         self.incident_edge_pos_weight =  (incident_edge_target[...,0] == 0).sum() / (incident_edge_target[...,0]).sum()
+
 
     def train_dataloader(self):
         train_split = IncidentDataSet(input_obs_data=self.input_obs_train, 
