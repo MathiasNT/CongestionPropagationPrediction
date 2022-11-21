@@ -7,7 +7,7 @@ from torchmetrics.classification import BinaryF1Score
 from torchmetrics.functional import precision_recall
 
 from util_folder.ml_utils.result_utils.metric_utils import masked_mape
-from util_folder.ml_utils.loss_utils import UpstreamBCELoss, UpstreamFocalLoss
+from util_folder.ml_utils.loss_utils import UpstreamBCELoss, UpstreamFocalLoss, FocalLoss, KLCategorical
         
             
 class BaseModelClass(pl.LightningModule):
@@ -39,6 +39,8 @@ class BaseModelClass(pl.LightningModule):
             self.upstream_bce_loss_func = UpstreamBCELoss(pos_weights=pos_weights)
         if self.loss_type in ['upstream_focal_loss', 'upstream_focal_loss_only']:
             self.upstream_bce_loss_func = UpstreamFocalLoss(pos_weights=pos_weights, gamma = torch.tensor([2])) # TODO Give gamma as feature
+        if self.loss_type in ['focal_loss_only']:
+            self.focal_bce_loss_func = FocalLoss(alpha=self.bce_pos_weight, gamma=2)
 
         self.seed = config['random_seed']
 
@@ -125,6 +127,11 @@ class BaseModelClass(pl.LightningModule):
             loss = upstream_bce_loss
             self.log(f'{step_type}/upstream_bce_loss', upstream_bce_loss, on_step=False,  on_epoch=True)
 
+        elif self.loss_type == 'focal_loss_only':
+            focal_loss = self.focal_bce_loss_func(y_hat[...,0], y_true[...,0])
+            loss = focal_loss
+            self.log(f'{step_type}/focal_bce_loss', focal_loss, on_step=False,  on_epoch=True)
+        
         else:
             raise ValueError('Please give a loss function')
 
@@ -227,4 +234,6 @@ class BaseModelClass(pl.LightningModule):
         return y_hat, y_true
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizer, milestones=[200,400])
+        return [optimizer], [scheduler]
