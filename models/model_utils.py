@@ -1,5 +1,15 @@
+import torch
+import numpy as np
 
 from doctest import DocTestRunner
+
+from models.rose_models.LGF_model import SimpleGNN, InformedGNN, InformedGNN_v2, InformedGNN_v3, InformedGNN_v4
+from models.baselines.lstm import RnnInformedModel, RnnModel, RnnNetworkInformedModel
+from models.baselines.mlp import MLPModel
+from models.baselines.temporal_cnn import TemporalCNNModel
+from models.baselines.lstm_attention import AttentionRNNModel, InformedAttentionRNNModel, NetworkInformedAttentionRNNModel
+from models.MPNN_models.mpnn_model import InformedMPNNModel
+from models.MPNN_models.nri_model import NRI_v1, NRI_uninformed
 
 
 class DotDict(dict):
@@ -41,3 +51,67 @@ def create_gnn_args(config):
     }
 
     return DotDict(temp_dict)
+
+
+
+def init_model(config, pos_weights):
+    if config['model'] == 'mlp':
+        model = MLPModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
+
+    if config['model'] == 'lstm':
+        model = RnnModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
+
+    if config['model'] == 'tcn':
+        model = TemporalCNNModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
+
+    if config['model'] == 'attention':
+        model = AttentionRNNModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
+
+    elif config['model'] == 'informed_lstm':
+        model = RnnInformedModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
+    
+    elif config['model'] == 'network_informed_lstm':
+        model = RnnNetworkInformedModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
+
+    elif config['model'] == 'informed_attention':
+        model = InformedAttentionRNNModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
+    
+    elif config['model'] == 'network_informed_attention':
+        model = NetworkInformedAttentionRNNModel(config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
+
+    elif config['model'] == 'gnn':
+        gnn_args = create_gnn_args(config)
+        adj_mx =  torch.Tensor(np.load(config['AD_path']))
+        model = SimpleGNN(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
+
+    elif config['model'] == 'informed_gnn':
+        gnn_args = create_gnn_args(config)
+        adj_mx =  torch.Tensor(np.load(config['AD_path']))
+        model = InformedGNN(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
+
+    elif config['model'] == 'informed_gnn_v2':
+        gnn_args = create_gnn_args(config)
+        adj_mx =  torch.Tensor(np.load(config['AD_path']))
+        model = InformedGNN_v2(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
+
+    elif config['model'] == 'informed_gnn_v3':
+        gnn_args = create_gnn_args(config)
+        adj_mx =  torch.Tensor(np.load(config['AD_path']))
+        model = InformedGNN_v3(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
+
+    elif config['model'] == 'informed_gnn_v4':
+        gnn_args = create_gnn_args(config)
+        adj_mx =  torch.Tensor(np.load(config['AD_path']))
+        model = InformedGNN_v4(adj_mx=adj_mx, args=gnn_args, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights) 
+
+    elif config['model'] == 'informed_mpnn':
+        adj_mx =  torch.Tensor(np.load(config['AD_path']))
+        model = InformedMPNNModel(adj_mx=adj_mx, config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
+
+    elif config['model'] == 'nri':
+        model = NRI_v1(config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
+
+    elif config['model'] == 'uninformed_nri': # TODO fix this such that it is nri and informed nri
+        model = NRI_uninformed(config=config, learning_rate=config['learning_rate'], pos_weights=pos_weights)
+
+    return model

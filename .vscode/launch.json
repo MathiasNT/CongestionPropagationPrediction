@@ -93,10 +93,28 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "configs/baseline_run/attention.yaml",
-                "configs/baseline_run/lstm.yaml",
-                "configs/baseline_run/mlp.yaml",
-                "configs/baseline_run/tcn.yaml",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/inf_dcrnn_focal_2.yaml",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/informed_attention.yaml",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/informed_lstm.yaml",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/network_informed_attention.yaml",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/network_informed_lstm.yaml",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/nri_v1.yaml",
+                "--overwrite_random_seed",
+                "1",
+                "--overwrite_gpu",
+                "1"
+            ]
+        },
+        {
+            "name": "actual test debug",
+            "type": "python",
+            "request": "launch",
+            "program": "model_test.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config_path",
+                "configs/informed_baseline_run2_test/informed_dcrnn_v2.yaml",
             ]
         },
     ]

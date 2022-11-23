@@ -156,7 +156,7 @@ class LGFCell(LightningModule):
 
     if self.filter_type == "learned":
       # return supports as a list of variables with gradients
-      # self.adj_mx = nn.Parameter(torch.eye(self.num_nodes, device=device))
+      self.adj_mx = nn.Parameter(torch.eye(self.num_nodes, device=self.device))
       self.supports.append(adj_mx.to_sparse())
 
     # parameter registration issue

@@ -9,7 +9,7 @@ from torchmetrics.functional import precision_recall
 # Write Rose
 # Go through code and clean it up if you have nothing else to do.
 
-class GraphBase(pl.LightningModule):
+class GraphBase_unused(pl.LightningModule):
     """
     """
 
