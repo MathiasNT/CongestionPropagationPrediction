@@ -46,7 +46,8 @@ def run_config(config, overwrite_random_seed, overwrite_gpu):
                             accelerator="gpu",
                             devices=[config['gpu']],
                             fast_dev_run=True,
-                            auto_lr_find=config['infer_lr']
+                            auto_lr_find=config['infer_lr'],
+                            precision=config['lightning_precision']
                             )
     else:
         now = datetime.datetime.now()
@@ -60,7 +61,8 @@ def run_config(config, overwrite_random_seed, overwrite_gpu):
                             devices=[config['gpu']], 
                             logger=wandb_logger,
                             auto_lr_find=config['infer_lr'],
-                            gradient_clip_val=0.5
+                            gradient_clip_val=0.5,
+                            precision=config['lightning_precision']
                             )
 
     # Train model

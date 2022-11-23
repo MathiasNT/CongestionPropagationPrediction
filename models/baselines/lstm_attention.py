@@ -8,8 +8,8 @@ class AttentionRNNModel(BaseModelClass):
     """Uninformed RNN baseline with self attention on LSTM hiddenstates. 
     OBS: Current implementation takes out the sensor on the edge with the incident.
     """
-    def __init__(self, config, learning_rate, pos_weigts):
-        super().__init__(config, learning_rate, pos_weigts)
+    def __init__(self, config, learning_rate, pos_weights):
+        super().__init__(config, learning_rate, pos_weights)
 
         self.rnn = nn.LSTM(input_size = config['timeseries_in_size'],
                            hidden_size = config['rnn_hidden_size'], 

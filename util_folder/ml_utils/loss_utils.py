@@ -86,9 +86,12 @@ class FocalLoss(_Loss):
 
 class KLCategorical(_Loss):
     """ KL divergence between two categorical distribution.
+    Taken from the implementation in the NRI paper. I am pretty sure that 
+    the implementation removes a constant term.
+    TODO double check if I remember correctly
     """
     def __init__(self, num_atoms, eps=1e-16, size_average=None, reduce=None, reduction: str = 'mean'):
-        super(KLCategorical, self).__ini__(size_average, reduce, reduction)
+        super(KLCategorical, self).__init__(size_average, reduce, reduction)
         self.eps = eps
         self.num_atoms = num_atoms
 

@@ -34,13 +34,14 @@ class BaseModelClass(pl.LightningModule):
         self.acc_func = Accuracy()
         self.f1_func = BinaryF1Score()
 
-        # TODO fix this refactor
-        if self.loss_type in ['upstream_loss', 'upstream_loss_only']:
+        if self.loss_type == 'upstream_loss':
             self.upstream_bce_loss_func = UpstreamBCELoss(pos_weights=pos_weights)
-        if self.loss_type in ['upstream_focal_loss', 'upstream_focal_loss_only']:
+        if self.loss_type == 'upstream_focal_loss':
             self.upstream_bce_loss_func = UpstreamFocalLoss(pos_weights=pos_weights, gamma = torch.tensor([2])) # TODO Give gamma as feature
-        if self.loss_type in ['focal_loss_only']:
+        if self.loss_type == 'focal_loss':
             self.focal_bce_loss_func = FocalLoss(alpha=self.bce_pos_weight, gamma=2)
+
+        self.full_loss = config['full_loss']
 
         self.seed = config['random_seed']
 
@@ -100,40 +101,26 @@ class BaseModelClass(pl.LightningModule):
 
         bce_loss, start_loss, end_loss, speed_loss = self.calculate_losses(y_hat, y_true)
 
-        # TODO refactor this into to parameters
-        if self.loss_type == 'full':
-            loss = bce_loss + start_loss + end_loss + speed_loss 
-
+           
+        if self.loss_type == 'bce':
+            loss = bce_loss        
         elif self.loss_type == 'upstream_loss':
             upstream_bce_loss = self.upstream_bce_loss_func(y_hat[...,0], y_true[...,0], batch['network_info'][...,0])
-            loss = upstream_bce_loss + start_loss + end_loss + speed_loss
             self.log(f'{step_type}/upstream_bce_loss', upstream_bce_loss, on_step=False,  on_epoch=True)
-            
+            loss = upstream_bce_loss
         elif self.loss_type == 'upstream_focal_loss':
             upstream_bce_loss = self.upstream_bce_loss_func(y_hat[...,0], y_true[...,0], batch['network_info'][...,0])
-            loss = upstream_bce_loss + start_loss + end_loss + speed_loss
             self.log(f'{step_type}/upstream_bce_loss', upstream_bce_loss, on_step=False,  on_epoch=True)
-           
-        elif self.loss_type == 'bce_only':
-            loss = bce_loss        
-
-        elif self.loss_type == 'upstream_loss_only':
-            upstream_bce_loss = self.upstream_bce_loss_func(y_hat[...,0], y_true[...,0], batch['network_info'][...,0])
             loss = upstream_bce_loss
-            self.log(f'{step_type}/upstream_bce_loss', upstream_bce_loss, on_step=False,  on_epoch=True)
-
-        elif self.loss_type == 'upstream_focal_loss_only':
-            upstream_bce_loss = self.upstream_bce_loss_func(y_hat[...,0], y_true[...,0], batch['network_info'][...,0])
-            loss = upstream_bce_loss
-            self.log(f'{step_type}/upstream_bce_loss', upstream_bce_loss, on_step=False,  on_epoch=True)
-
-        elif self.loss_type == 'focal_loss_only':
+        elif self.loss_type == 'focal_loss':
             focal_loss = self.focal_bce_loss_func(y_hat[...,0], y_true[...,0])
-            loss = focal_loss
             self.log(f'{step_type}/focal_bce_loss', focal_loss, on_step=False,  on_epoch=True)
-        
+            loss = focal_loss
         else:
             raise ValueError('Please give a loss function')
+
+        if self.full_loss:
+            loss += start_loss + end_loss + speed_loss
 
         metrics_dict = self.calc_metrics(y_hat, y_true, step_type)
 
