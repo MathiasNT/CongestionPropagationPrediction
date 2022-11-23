@@ -6,6 +6,8 @@ full_network_comp*
 incident_only_comp*
 wandb*
 configs/*
+notebooks/dataset_1
+notebooks/real_world_data
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
