@@ -1,4 +1,3 @@
-from random import random
 import yaml
 from argparse import ArgumentParser
 import pytorch_lightning as pl
@@ -8,7 +7,6 @@ import datetime
 
 from util_folder.ml_utils.data_utils.data_loader_utils import IncidentDataModule
 from models.model_utils import load_configs, init_model
-
 
 
 def run_config(config, overwrite_random_seed, overwrite_gpu):
@@ -26,15 +24,15 @@ def run_config(config, overwrite_random_seed, overwrite_gpu):
     if overwrite_gpu is not None:
         config['gpu'] = overwrite_gpu
 
-    # Load data    
-    incident_data_module = IncidentDataModule(folder_path = folder_path, 
-                                              transform=config['transform'], 
-                                              batch_size = config['batch_size'],
+    # Load data
+    incident_data_module = IncidentDataModule(folder_path=folder_path,
+                                              transform=config['transform'],
+                                              batch_size=config['batch_size'],
                                               spatial_test=config['spatial_test'],
                                               subset_size=config['subset_size'],
                                               min_impact_threshold=config['min_impact_threshold'])
     incident_data_module.setup()
-    if config['form'] == 'incident_only': # TODO could do asserts for other cases as well
+    if config['form'] == 'incident_only':  # TODO could do asserts for other cases as well
         assert config['model'] in ['lstm', 'informed_lstm', 'mlp'], 'Only LSTM baselines run on incident only'
 
     # Init model
