@@ -10,6 +10,9 @@ notebooks/dataset_1
 saved_models*
 *.png
 notebooks/real_world_data*
+pems_data/input_data.pt
+pems_data/after_data.pt
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
