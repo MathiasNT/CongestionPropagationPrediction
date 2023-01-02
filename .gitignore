@@ -11,6 +11,9 @@ saved_models*
 *.png
 notebooks/real_world_data*
 
+pems_data/*
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

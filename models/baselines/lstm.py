@@ -45,59 +45,59 @@ class RnnModel(BaseModelClass):
         return y_hat
 
 
-class RnnInformedModel(BaseModelClass):
-    """Informed RNN baseline.
+#class RnnInformedModel(BaseModelClass):
+    #"""Informed RNN baseline.
 
-    Extension of the uninformed rnn baseline. This RNN gets incident information but still treats each sensor as an independent time series.
+    #Extension of the uninformed rnn baseline. This RNN gets incident information but still treats each sensor as an independent time series.
 
 
-    OBS: Current implementation only looks at the sensor closest to the incident.
-    """
-    def __init__(self, config, learning_rate, pos_weights):
-        super().__init__(config, learning_rate, pos_weights)
+    #OBS: Current implementation only looks at the sensor closest to the incident.
+    #"""
+    #def __init__(self, config, learning_rate, pos_weights):
+        #super().__init__(config, learning_rate, pos_weights)
 
-        self.rnn = torch.nn.LSTM(input_size = config['timeseries_in_size'],
-                                    hidden_size = config['rnn_hidden_size'],
-                                    batch_first=True)
+        #self.rnn = torch.nn.LSTM(input_size = config['timeseries_in_size'],
+                                    #hidden_size = config['rnn_hidden_size'],
+                                    #batch_first=True)
 
-        self.fc_shared = torch.nn.Linear(in_features= config['rnn_hidden_size'], out_features=config['fc_hidden_size'])
+        #self.fc_shared = torch.nn.Linear(in_features= config['rnn_hidden_size'], out_features=config['fc_hidden_size'])
 
-        self.fc_info = torch.nn.Linear(in_features=config['info_in_size'], out_features=config['fc_hidden_size'] )
+        #self.fc_info = torch.nn.Linear(in_features=config['info_in_size'], out_features=config['fc_hidden_size'] )
 
-        self.fc_inform = torch.nn.Linear(in_features=config['fc_hidden_size'] * 2, out_features=config['fc_hidden_size'])
+        #self.fc_inform = torch.nn.Linear(in_features=config['fc_hidden_size'] * 2, out_features=config['fc_hidden_size'])
 
-        self.fc_classifier = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
-        self.fc_start = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
-        self.fc_end = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
-        self.fc_speed = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
+        #self.fc_classifier = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
+        #self.fc_start = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
+        #self.fc_end = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
+        #self.fc_speed = torch.nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
 
-    def forward(self, inputs, incident_info, network_info):
-        batch_size, time_steps, features = inputs.shape
+    #def forward(self, inputs, incident_info, network_info):
+        #batch_size, time_steps, features = inputs.shape
 
-        _, (hn, _) = self.rnn(inputs)
-        hn = torch.relu(hn)
+        #_, (hn, _) = self.rnn(inputs)
+        #hn = torch.relu(hn)
 
-        hn_fc = self.fc_shared(hn)
-        hn_fc = torch.relu(hn_fc).squeeze()
+        #hn_fc = self.fc_shared(hn)
+        #hn_fc = torch.relu(hn_fc).squeeze()
 
-        info = incident_info[:,1:]   # selecting number of blocked lanes, slow zone speed and duration and startime 
-        info_embed = self.fc_info(info) 
-        info_embed = torch.relu(info_embed)
+        #info = incident_info[:,1:]   # selecting number of blocked lanes, slow zone speed and duration and startime 
+        #info_embed = self.fc_info(info) 
+        #info_embed = torch.relu(info_embed)
 
-        # need to replicate the info along the batch dim here
+        ## need to replicate the info along the batch dim here
 
-        hn_fc_informed = self.fc_inform(torch.cat([hn_fc, info_embed], dim=-1))
-        hn_fc_informed = torch.relu(hn_fc_informed)
+        #hn_fc_informed = self.fc_inform(torch.cat([hn_fc, info_embed], dim=-1))
+        #hn_fc_informed = torch.relu(hn_fc_informed)
 
-        class_logit = self.fc_classifier(hn_fc_informed)
+        #class_logit = self.fc_classifier(hn_fc_informed)
 
-        start_pred = self.fc_start(hn_fc_informed)
-        end_pred = self.fc_end(hn_fc_informed)
+        #start_pred = self.fc_start(hn_fc_informed)
+        #end_pred = self.fc_end(hn_fc_informed)
 
-        speed_pred = self.fc_speed(hn_fc_informed)
+        #speed_pred = self.fc_speed(hn_fc_informed)
     
-        y_hat = torch.cat([class_logit, start_pred, end_pred, speed_pred], dim=-1).squeeze()
-        return y_hat
+        #y_hat = torch.cat([class_logit, start_pred, end_pred, speed_pred], dim=-1).squeeze()
+        #return y_hat
 
 
 class RnnNetworkInformedModel(BaseModelClass):
@@ -157,25 +157,22 @@ class RnnNetworkInformedModel(BaseModelClass):
         y_hat = torch.cat([class_logit, start_pred, end_pred, speed_pred], dim=-1).squeeze()
         return y_hat
 
-# TODO do or remove this part
-class ExtendedRnnNetworkInformedModel(BaseModelClass):
+
+class RnnInformedModel(BaseModelClass):
     """Informed RNN baseline.
 
     Extension of the uninformed RNN baseline. This RNN gets incident information but still treats each sensor as an independent time series.
-
-
-    OBS: Current implementation only looks at the sensor closest to the incident.
     """
-    def __init__(self, config, learning_rate):
-        super().__init__(config, learning_rate)
+    def __init__(self, config, learning_rate, pos_weights):
+        super().__init__(config, learning_rate, pos_weights)
 
-        self.rnn = torch.nn.LSTM(input_size = config['rnn_input_size'],
+        self.rnn = torch.nn.LSTM(input_size = config['timeseries_in_size'],
                                     hidden_size = config['rnn_hidden_size'],
                                     batch_first=True)
 
         self.fc_shared = torch.nn.Linear(in_features= config['rnn_hidden_size'], out_features=config['fc_hidden_size'])
 
-        self.fc_info = torch.nn.Linear(in_features=config['info_size'] + config['network_info_size'], out_features=config['fc_hidden_size'] )
+        self.fc_info = torch.nn.Linear(in_features=config['info_in_size'], out_features=config['fc_hidden_size'] )
 
         self.fc_inform = torch.nn.Linear(in_features=config['fc_hidden_size'] * 2, out_features=config['fc_hidden_size'])
 
@@ -194,6 +191,7 @@ class ExtendedRnnNetworkInformedModel(BaseModelClass):
         hn_fc = torch.relu(hn_fc).squeeze()
 
         info = incident_info[:,1:]   # selecting number of blocked lanes, slow zone speed and duration and startime 
+        network_info = network_info == 0
         combined_info = torch.cat([info,network_info.unsqueeze(-1)], dim=-1)       
 
 
