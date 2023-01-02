@@ -6,14 +6,13 @@ from pytorch_lightning.loggers import WandbLogger
 import wandb
 import datetime
 
-from util_folder.ml_utils.data_utils.data_loader_utils import IncidentDataModule
+from util_folder.ml_utils.data_utils.data_loader_utils import IncidentDataModule, RWIncidentDataModule
 from models.model_utils import load_configs, init_model
 
 
 
 def run_config(config, overwrite_random_seed, overwrite_gpu):
 
-    folder_path = f'Simulation_scenarios/{config["scenario"]}/Results/{config["simulation_name"]}'
 
     debug_run = config['debug']
 
@@ -26,13 +25,25 @@ def run_config(config, overwrite_random_seed, overwrite_gpu):
     if overwrite_gpu is not None:
         config['gpu'] = overwrite_gpu
 
-    # Load data    
-    incident_data_module = IncidentDataModule(folder_path = folder_path, 
-                                              transform=config['transform'], 
-                                              batch_size = config['batch_size'],
-                                              spatial_test=config['spatial_test'],
-                                              subset_size=config['subset_size'],
-                                              min_impact_threshold=config['min_impact_threshold'])
+    # Load data 
+    if config['scenario'] == 'pems':
+        folder_path = f'{config["simulation_name"]}'
+        incident_data_module = RWIncidentDataModule(folder_path = folder_path, 
+                                                transform=config['transform'], 
+                                                batch_size = config['batch_size'],
+                                                spatial_test=config['spatial_test'],
+                                                subset_size=config['subset_size'],
+                                                min_impact_threshold=config['min_impact_threshold'])
+    else:   
+        folder_path = f'Simulation_scenarios/{config["scenario"]}/Results/{config["simulation_name"]}'
+        incident_data_module = IncidentDataModule(folder_path = folder_path, 
+                                                transform=config['transform'], 
+                                                batch_size = config['batch_size'],
+                                                spatial_test=config['spatial_test'],
+                                                subset_size=config['subset_size'],
+                                                min_impact_threshold=config['min_impact_threshold'])
+
+    
     incident_data_module.setup()
     if config['form'] == 'incident_only': # TODO could do asserts for other cases as well
         assert config['model'] in ['lstm', 'informed_lstm', 'mlp'], 'Only LSTM baselines run on incident only'

@@ -444,6 +444,8 @@ class InformedGNN_v3(BaseModelClass, Seq2SeqAttrs):
 
     self.activation = nn.Tanh()
 
+    self.limited_network_info = config['limited_network_info']
+
     self.timeseries_encoder = Encoder(self.adj_mx, args)
     
     self.mlp_timeseries = nn.Sequential(
@@ -514,6 +516,8 @@ class InformedGNN_v3(BaseModelClass, Seq2SeqAttrs):
 
 
 
+    if self.limited_network_info:
+        network_info[...,0] = network_info[...,0] == 1
     info_embed = self.mlp_net_info(torch.cat([padded_info, network_info], dim=-1))
     info_embed = torch.relu(info_embed)
     incident_hidden_state, encoder_hidden_state = self.incident_encoder(info_embed, encoder_hidden_state)

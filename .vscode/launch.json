@@ -85,7 +85,7 @@
             ]
         },
         {
-            "name": "actual scripts debug",
+            "name": "actual scripts debug1",
             "type": "python",
             "request": "launch",
             "program": "model_train.py",
@@ -93,12 +93,23 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/inf_dcrnn_focal_2.yaml",
-                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/informed_attention.yaml",
-                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/informed_lstm.yaml",
-                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/network_informed_attention.yaml",
-                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/network_informed_lstm.yaml",
-                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/nri_v1.yaml",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/inf_dcrnn_focal.yaml",
+                "--overwrite_random_seed",
+                "1",
+                "--overwrite_gpu",
+                "1"
+            ]
+        },
+        {
+            "name": "actual scripts debug2",
+            "type": "python",
+            "request": "launch",
+            "program": "model_train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--config_path",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/pems_uninformed_spatial_comp/uninformed_nri_dev.yaml",
                 "--overwrite_random_seed",
                 "1",
                 "--overwrite_gpu",

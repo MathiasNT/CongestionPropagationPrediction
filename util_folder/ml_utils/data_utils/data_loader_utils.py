@@ -150,7 +150,6 @@ class IncidentDataModule(pl.LightningDataModule):
         self.spatial_test = spatial_test
 
         self.verbose = verbose
-        
 
     def prepare_data(self):
         # TODO implement check of the folder here -> have code in notebbok on data preprocess
@@ -177,7 +176,7 @@ class IncidentDataModule(pl.LightningDataModule):
             n_obs_full = len(input_full)
 
         if self.min_impact_threshold is not None:
-            threshold_mask = target_full[...,0].sum(1) > self.min_impact_threshold
+            threshold_mask = target_full[...,0].sum(1) >= self.min_impact_threshold
             input_full = input_full[threshold_mask]
             input_obs_full = input_obs_full[threshold_mask]
             input_time_full = input_time_full[threshold_mask]
@@ -288,3 +287,126 @@ class IncidentDataModule(pl.LightningDataModule):
                                       network_info=self.network_info_test)
         return DataLoader(test_split, batch_size=self.batch_size, shuffle=False, num_workers=8)
 
+
+class RWIncidentDataModule(IncidentDataModule):
+    """pl DataModule that creates and keeps track of the IncidentDataSet and DataLoaders
+
+        Attributes:
+            batch_size (int): Batch size for the dataloaders
+            folder_path (str): Path to the folder with the data
+
+                Datasets for the Dataloader  - see IncidentDataSet for specifics 
+            train_frac (float): Fraction of data to be used for the train set, the rest is split 50/50 to val and test sets
+            input_val/test/train (torch.Tensor): The input datasets for the val, test and train dataloaders
+            target_val/test/train (torch.Tensor): The target datasets for the val, test and train dataloaders
+            incident_info_val/test/train (torch.Tensor): The incident_info datasets for the val, test and train dataloaders
+            network_info_val/test/train (torch.Tensor): The network_infor datasets for the val, test and train dataloaders
+
+            full_pos weight (float): reweighting factor based on full network for the positive class for the BCE loss 
+                                    (# negative obs / # positive obs)
+            incident_edge_pos weight (float): reweighting factor based only on incident edge for the positive class for the 
+                                             BCE loss (# negative obs / # positive obs)
+
+    """
+
+    def __init__(self, folder_path, transform, spatial_test=False, train_frac=0.6,  batch_size=32, subset_size=None, min_impact_threshold=None, verbose=True):
+        super().__init__(folder_path, transform, spatial_test, train_frac,  batch_size, subset_size, min_impact_threshold, verbose)
+    
+    def setup(self, stage=None):
+        input_obs_full = torch.load(f'{self.folder_path}/input_data.pt').unsqueeze(2).type(torch.get_default_dtype())
+        n_obs_full = input_obs_full.shape[0]
+        n_nodes = input_obs_full.shape[1]
+        input_time_full = torch.load(f'{self.folder_path}/input_time_data.pt').unsqueeze(1).unsqueeze(1).repeat(1,n_nodes,1,1,1).type(torch.get_default_dtype())
+        target_full = torch.load(f'{self.folder_path}/target_data.pt').type(torch.get_default_dtype())
+        incident_info_full = torch.load(f'{self.folder_path}/incident_info.pt').type(torch.get_default_dtype())
+        network_info_full = torch.load(f'{self.folder_path}/network_info.pt').unsqueeze(-1).type(torch.get_default_dtype())
+
+
+        if self.subset_size is not None:
+            input_obs_full = input_obs_full[:self.subset_size]
+            input_time_full = input_time_full[:self.subset_size]
+            target_full = target_full[:self.subset_size]
+            incident_info_full = incident_info_full[:self.subset_size]
+            network_info_full = network_info_full[:self.subset_size]
+            n_obs_full = len(input_obs_full)
+
+        if self.min_impact_threshold is not None:
+            threshold_mask = target_full[...,0].sum(1) >= self.min_impact_threshold
+            input_obs_full = input_obs_full[threshold_mask]
+            input_time_full = input_time_full[threshold_mask]
+            target_full = target_full[threshold_mask]
+            incident_info_full = incident_info_full[threshold_mask]
+            network_info_full = network_info_full[threshold_mask]
+            n_obs_full = len(input_obs_full)
+
+        if self.verbose:
+            print(f'*** DATA SUMMARY: ***')
+            print(f'{input_obs_full.shape=}')
+            print(f'{input_time_full.shape=}')
+            print(f'{target_full.shape=}')
+            print(f'{incident_info_full.shape=}')
+            print(f'{network_info_full.shape=}\n')
+
+
+        # Generate the train, val and test split idxs
+        train_len = int(np.ceil(n_obs_full * self.train_frac))
+        test_val_len = int(np.round((n_obs_full - train_len) * 0.5))
+
+        # Fixing off by one errors
+        dataset_len_err = n_obs_full - (train_len + test_val_len * 2)
+        train_len += dataset_len_err
+        train_set, val_set, test_set = random_split(range(n_obs_full),
+                                                    [train_len, test_val_len,test_val_len],
+                                                    generator=torch.Generator().manual_seed(1))
+
+        if self.spatial_test: 
+            raise Exception("Spatial subset for RW data not implemented")
+        
+        padded_lane_mask = torch.zeros(n_obs_full, n_nodes, 1).bool()
+        unused_lane_mask = torch.zeros(n_obs_full, n_nodes, 1).bool()
+        # Normalize the data
+        tfed_input_obs, tfed_target_full, tfed_incident_info_full, tfed_network_info_full = self.transform(input_obs_full=input_obs_full, 
+                                                                                                           target_full=target_full, 
+                                                                                                           incident_info_full=incident_info_full, 
+                                                                                                           network_info_full=network_info_full,
+                                                                                                           train_set=train_set,
+                                                                                                           padded_lane_mask=padded_lane_mask,
+                                                                                                           unused_lane_mask=unused_lane_mask
+                                                                                                           )
+
+        # Split up the normalized data
+        self.input_obs_train = tfed_input_obs[train_set.indices]
+        self.input_obs_val = tfed_input_obs[val_set.indices]
+        self.input_obs_test = tfed_input_obs[test_set.indices]
+
+        self.input_time_train = input_time_full[train_set.indices]
+        self.input_time_val = input_time_full[val_set.indices]
+        self.input_time_test = input_time_full[test_set.indices]
+
+        self.target_train = tfed_target_full[train_set.indices]
+        self.target_val = tfed_target_full[val_set.indices]
+        self.target_test = tfed_target_full[test_set.indices]
+
+        self.incident_info_train = tfed_incident_info_full[train_set.indices]
+        self.incident_info_val = tfed_incident_info_full[val_set.indices]
+        self.incident_info_test = tfed_incident_info_full[test_set.indices]
+
+        self.network_info_train = tfed_network_info_full[train_set.indices]
+        self.network_info_val = tfed_network_info_full[val_set.indices]
+        self.network_info_test = tfed_network_info_full[test_set.indices]
+
+
+        pos_weights = []
+        target_class = self.target_train[...,0]
+        for i in range(0,30):
+            mask = self.network_info_train[...,0] == -i
+            pos_weight = (target_class[mask] == 0).sum() / target_class[mask].sum()
+            pos_weights.append(pos_weight)
+        self.pos_weights = torch.tensor(pos_weights)
+        self.pos_weights[self.pos_weights == float('Inf')] = 1 # If no pos at that level set to 1 as that corresponds to no reweighting
+
+        # This part should be moved to preprocessing
+        # But for now we calculate the positive weight of the classification problem
+        self.full_pos_weight = (self.target_train[...,0] == 0).sum() / self.target_train[...,0].sum()
+        incident_edge_target = self.target_train[(self.network_info_train[...,0] == 0)]
+        self.incident_edge_pos_weight =  (incident_edge_target[...,0] == 0).sum() / (incident_edge_target[...,0]).sum()

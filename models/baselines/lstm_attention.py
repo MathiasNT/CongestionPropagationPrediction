@@ -55,11 +55,9 @@ class InformedAttentionRNNModel(BaseModelClass):
     """Informed RNN baseline. 
 
     Extension of the uninformed attention baseline. This model gets incident information but still treats each sensor as an independent time series.
-
-    OBS: Current implementation takes out the sensor on the edge with the incident.
     """
     def __init__(self, config, learning_rate, pos_weights):
-        super().__init__(config, learning_rate, pos_weights )
+        super().__init__(config, learning_rate, pos_weights)
 
         self.rnn = nn.LSTM(input_size = config['timeseries_in_size'],
                            hidden_size = config['rnn_hidden_size'], 
@@ -71,7 +69,7 @@ class InformedAttentionRNNModel(BaseModelClass):
 
         self.fc_shared = nn.Linear(in_features= config['rnn_hidden_size'], out_features=config['fc_hidden_size'])
 
-        self.fc_info = torch.nn.Linear(in_features=config['info_in_size'], out_features=config['fc_hidden_size'] )
+        self.fc_info = torch.nn.Linear(in_features=config['info_in_size'] , out_features=config['fc_hidden_size'] )
         self.fc_inform = torch.nn.Linear(in_features=config['fc_hidden_size'] * 2, out_features=config['fc_hidden_size'])
 
         self.fc_classifier = nn.Linear(in_features=config['fc_hidden_size'], out_features=1)
@@ -94,10 +92,12 @@ class InformedAttentionRNNModel(BaseModelClass):
         hn_fc = torch.relu(hn_fc)
 
         info = incident_info[:,1:]   # selecting number of blocked lanes, slow zone speed and duration and startime 
-        info_embed = self.fc_info(info) 
-        info_embed = torch.relu(info_embed)
+        network_info = network_info == 0
+        combined_info = torch.cat([info,network_info.unsqueeze(-1)], dim=-1)       
+        combined_info_embed = self.fc_info(combined_info) 
+        combined_info_embed = torch.relu(combined_info_embed)
         # need to replicate the info along the batch dim here
-        hn_fc_informed = self.fc_inform(torch.cat([hn_fc, info_embed], dim=-1))
+        hn_fc_informed = self.fc_inform(torch.cat([hn_fc, combined_info_embed], dim=-1))
         hn_fc_informed = torch.relu(hn_fc_informed)
 
         class_logit = self.fc_classifier(hn_fc_informed)
