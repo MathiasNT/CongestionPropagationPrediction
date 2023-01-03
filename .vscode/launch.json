@@ -93,11 +93,11 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/informed_spatial_comp/inf_dcrnn_focal.yaml",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/different_data_size_inf_dcrnn/inf_dcrnn_400.yaml",
                 "--overwrite_random_seed",
                 "1",
                 "--overwrite_gpu",
-                "1"
+                "0"
             ]
         },
         {
