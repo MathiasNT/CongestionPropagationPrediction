@@ -5,7 +5,6 @@ incident/*
 full_network_comp*
 incident_only_comp*
 wandb*
-configs/*
 notebooks/dataset_1
 saved_models*
 *.png

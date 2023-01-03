@@ -1,0 +1,49 @@
+# Data settings
+scenario: motorway
+simulation_name: incident_large
+form: graph # incident_only, independent, graph
+transform: scalenormalize
+transform_network_info: True
+num_nodes : 147
+spatial_test: True
+subset_size: 
+min_impact_threshold: 
+
+# Logger setttings
+wandb_project: informed_class_only
+wandb_name: informed_dcrnn_v3_laplacian_less_diff
+debug: False
+
+# Training settings
+gpu: 1
+epochs: 600
+batch_size: 500
+infer_lr: False
+learning_rate: 0.0009
+loss_type: upstream_loss_only
+bce_pos_weight: 0.5 #25.5191 # full: 25.5191, ie: 02502
+dropout: 0.5
+random_seed: 44 
+
+# Model settings
+model: informed_gnn_v4
+timeseries_in_size: 20 
+n_timesteps: 10
+fc_hidden_size: 64
+info_in_size: 3
+network_in_size: 13
+out_size: 4
+
+# Rose settings
+max_diffusion_step: 2
+filter_type: learned
+use_gc_ru: True
+use_gc_c: True
+use_curriculum_learning: False
+cl_decay_steps: None
+num_layers: 1
+activation: linear
+rnn_hidden_size: 64 
+
+AD_path: /home/manity/Quick_adap/quick_adap_to_incidents/Simulation_scenarios/motorway/Results/incident3/link_AD_matrix.npy
+

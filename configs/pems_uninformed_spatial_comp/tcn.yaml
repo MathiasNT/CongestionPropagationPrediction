@@ -1,0 +1,46 @@
+# Data settings
+scenario: pems
+simulation_name: pems_data
+form: independent # incident_only, independent, graph
+transform: scalenormalize
+transform_network_info: True
+num_nodes : 215
+spatial_test: False
+subset_size: 
+min_impact_threshold: 
+limited_network_info: False
+
+# Logger setttings
+wandb_project: pems_uninformed_spatial_comp
+wandb_name: tcn
+debug: False
+
+# Training settings
+gpu: 1
+epochs: 300
+batch_size: 1000
+infer_lr: False
+learning_rate: 0.0003
+loss_type: focal_loss
+full_loss: True
+bce_pos_weight: 25.5 # full: 25.5191, ie: 02502 
+dropout: 0.5
+random_seed: 42 
+lightning_precision: 32
+
+results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/pems_uninformed_spatial_comp/tcn
+
+# General model settings
+model: tcn
+timeseries_in_size: 7
+n_timesteps: 12
+fc_hidden_size: 16 
+info_in_size: 3
+network_in_size: 13
+out_size: 4
+
+# TCN settings
+num_channels: [20, 20, 10]
+cnn_in_size: 7
+kernel_size: 3
+tcn_emb_size: 120

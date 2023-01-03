@@ -1,0 +1,53 @@
+# Data settings
+scenario: motorway
+simulation_name: incident_large
+form: graph # incident_only, independent, graph
+transform: scalenormalize
+transform_network_info: True
+num_nodes : 147
+spatial_test: True
+subset_size: 
+min_impact_threshold: 
+
+# Logger setttings
+wandb_project: uninformed_spatial_comp
+wandb_name: dcrnn
+debug: False
+
+# Training settings
+gpu: 1
+epochs: 300
+batch_size: 600
+infer_lr: False
+learning_rate: 0.0003
+loss_type: focal_loss
+full_loss: True
+bce_pos_weight: 25.5 # full: 25.5191, ie: 02502
+dropout: 0.5
+random_seed: 42 
+lightning_precision: 32
+
+results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/uninformed_spatial_comp/dcrnn
+
+# General model settings
+model: gnn
+timeseries_in_size: 20 
+n_timesteps: 10
+fc_hidden_size: 64
+info_in_size: 3
+network_in_size: 13
+out_size: 4
+
+# DCRNN settings
+max_diffusion_step: 1
+filter_type: random_walk
+use_gc_ru: True
+use_gc_c: True
+use_curriculum_learning: False
+cl_decay_steps: None
+num_layers: 1
+activation: linear
+rnn_hidden_size: 128
+
+AD_path: /home/manity/Quick_adap/quick_adap_to_incidents/Simulation_scenarios/motorway/Results/incident_large/weighted_AD_matrix.npy
+

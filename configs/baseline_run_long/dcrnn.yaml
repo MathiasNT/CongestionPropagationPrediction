@@ -1,0 +1,46 @@
+# Data settings
+scenario: motorway
+simulation_name: incident_large_long
+form: graph # incident_only, independent, graph
+num_nodes : 147
+
+# Logger setttings
+wandb_project: baseline_comp_long
+wandb_name: dcrnn
+debug: False
+results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/baseline_comp_5min/dcrnn
+
+# Training settings
+gpu: 1
+epochs: 1300
+batch_size: 800
+infer_lr: False
+learning_rate: 0.0003
+full_loss: True
+bce_pos_weight:  25.5191 # full: 25.5191, ie: 02502
+dropout: 0.5
+random_seed: 42 
+
+
+# General model settings
+model: gnn
+timeseries_in_size: 20 
+n_timesteps: 10
+fc_hidden_size: 16 
+info_in_size: 3
+network_in_size: 13
+out_size: 4
+
+# DCRNN settings
+max_diffusion_step: 2
+filter_type: random_walk
+use_gc_ru: True
+use_gc_c: True
+use_curriculum_learning: False
+cl_decay_steps: None
+num_layers: 2
+activation: linear
+rnn_hidden_size: 16 
+
+AD_path: /home/manity/Quick_adap/quick_adap_to_incidents/Simulation_scenarios/motorway/Results/incident3/link_AD_matrix.npy
+

@@ -1,0 +1,46 @@
+# Data settings
+scenario: pems
+simulation_name: pems_data
+form: graph # incident_only, independent, graph
+transform: scalenormalize
+transform_network_info: True
+num_nodes : 215
+spatial_test: False
+subset_size: 
+min_impact_threshold: 
+limited_network_info: False
+
+# Logger setttings
+wandb_project: real_world_netinf_nri
+wandb_name: nri
+debug: False
+
+# Training settings
+gpu: 1
+epochs: 300
+batch_size: 50
+infer_lr: False
+learning_rate: 0.00006
+loss_type: nri_loss
+full_loss: True
+bce_pos_weight: 8 # 35.75 
+dropout: 0.5
+random_seed: 41 
+lightning_precision: 16
+
+results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/pems_informed/netinf_nri
+
+# Model settings
+model: nri
+timeseries_in_size: 7
+rnn_hidden_size: 64
+fc_hidden_size: 64
+network_in_size: 1
+info_in_size: 3
+n_timesteps: 12
+
+
+# NRI specific settings
+AD_path: /home/manity/Quick_adap/quick_adap_to_incidents/pems_data/PEMS_d7_adj.npy
+nri_n_hid: 64
+nri_log_prior: 0.1

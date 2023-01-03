@@ -1,0 +1,36 @@
+# Data settings
+scenario: motorway
+simulation_name: incident_large_long
+form: independent # incident_only, independent, graph
+num_nodes : 147
+
+# Logger setttings
+wandb_project: baseline_comp_long
+wandb_name: mlp
+debug: False
+results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/baseline_comp_5min/mlp
+
+# Training settings
+gpu: 1
+epochs: 300
+batch_size: 1000
+infer_lr: False
+learning_rate: 0.0003
+full_loss: True
+bce_pos_weight: 25.5191 # full: 25.5191, ie: 02502
+dropout: 0.5
+random_seed: 42 
+
+
+# General model settings
+model: mlp
+timeseries_in_size: 20 
+n_timesteps: 15
+fc_hidden_size: 16 
+info_in_size: 3
+network_in_size: 13
+out_size: 4
+
+# MLP settings
+mlp_in_size: 200
+mlp_hidden_size: 30

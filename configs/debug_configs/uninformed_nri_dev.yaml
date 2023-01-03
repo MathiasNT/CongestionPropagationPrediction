@@ -1,0 +1,44 @@
+# Data settings
+scenario: motorway
+simulation_name: incident_large
+form: graph # incident_only, independent, graph
+transform: scalenormalize
+transform_network_info: True
+num_nodes : 147
+spatial_test: True
+subset_size: 
+min_impact_threshold: 
+
+# Logger setttings
+wandb_project: nri_test
+wandb_name: nri_v1
+debug: True
+
+# Training settings
+gpu: 1
+epochs: 300
+batch_size: 100
+infer_lr: False
+learning_rate: 0.00006
+loss_type: nri_loss
+bce_pos_weight: 2 #25.5191 # full: 25.5191, ie: 02502
+dropout: 0.5
+random_seed: 41 
+lightning_precision: 16
+
+results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/spatial_comp/nri
+
+# Model settings
+model: uninformed_nri
+timeseries_in_size: 20
+rnn_hidden_size: 64
+fc_hidden_size: 64
+network_in_size: 12
+n_timesteps: 10
+
+
+# NRI specific settings
+AD_path: /home/manity/Quick_adap/quick_adap_to_incidents/Simulation_scenarios/motorway/Results/incident3/link_AD_matrix.npy
+nri_n_hid: 64
+nri_log_prior: 0.1
+

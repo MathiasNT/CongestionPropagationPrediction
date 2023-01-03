@@ -1,0 +1,33 @@
+# Data settings
+scenario: motorway
+simulation_name: incident_large
+form: independent
+num_nodes: 147
+
+# Logger setttings
+wandb_project: informed_baseline_comp
+wandb_name: network_informed_attention
+debug: False
+
+# Training settings
+gpu: 1
+epochs: 300
+batch_size: 1000
+infer_lr: False
+learning_rate: 0.0003
+full_loss: True
+bce_pos_weight: 25.5191 # full: 25.5191, ie: 02502
+dropout: 0.5
+random_seed: 44
+
+# Model settings
+model: network_informed_attention
+timeseries_in_size: 20 
+fc_hidden_size: 16 
+info_in_size: 3
+network_info_size: None
+out_size: 4
+
+rnn_hidden_size: 32 
+network_in_size: 1
+attention_num_heads: 1

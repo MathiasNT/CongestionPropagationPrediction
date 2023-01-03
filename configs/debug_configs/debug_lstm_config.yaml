@@ -1,0 +1,43 @@
+# Data settings
+scenario: motorway
+simulation_name: incident3
+form: incident_only # incident_only, independent, graph
+num_nodes : 147
+
+# Logger setttings
+wandb_project: debug
+wandb_name: test_1
+debug: True
+
+# Training settings
+gpu: 1
+epochs: 2000
+batch_size: 100
+infer_lr: False
+learning_rate: 0.0003
+full_loss: True
+bce_pos_weight: 22.5178 # full: 22.5178 IE: 0.254
+dropout: 0.5
+random_seed: 42 
+
+# Model settings
+model: lstm
+timeseries_in_size: 20 
+n_timesteps: 10
+rnn_hidden_size: 32 
+fc_hidden_size: 16 
+info_in_size: 3
+network_in_size: 13
+out_size: 4
+
+# Rose settings
+max_diffusion_step: 2
+filter_type: random_walk
+use_gc_ru: True
+use_gc_c: True
+use_curriculum_learning: False
+cl_decay_steps: None
+num_layers: 2
+activation: linear
+
+AD_path: /home/manity/Quick_adap/quick_adap_to_incidents/motorway/Results/incident3/link_AD_matrix.npy

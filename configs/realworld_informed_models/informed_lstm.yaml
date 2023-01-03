@@ -1,0 +1,43 @@
+# Data settings
+scenario: pems
+simulation_name: pems_data
+form: independent
+transform: scalenormalize
+transform_network_info: True
+num_nodes: 215
+spatial_test: False
+subset_size: 
+min_impact_threshold: 
+limited_network_info: False
+
+# Logger setttings
+wandb_project: real_world_informed_spatial_comp
+wandb_name: inf_lstm
+debug: False
+
+# Training settings
+gpu: 1
+epochs: 600
+batch_size: 1000
+infer_lr: False
+learning_rate: 0.0003
+loss_type: focal_loss
+full_loss: True
+bce_pos_weight: 25.5 # full: 25.5191, ie: 02502
+dropout: 0.5
+random_seed: 42
+lightning_precision: 32
+
+results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/pems_informed/inf_lstm
+
+# General Model settings
+model: informed_lstm
+timeseries_in_size: 7
+n_timesteps: 12
+fc_hidden_size: 65 
+info_in_size: 4
+network_info_size: None
+out_size: 4
+
+# LSTM settings
+rnn_hidden_size: 32 
