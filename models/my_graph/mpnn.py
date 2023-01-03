@@ -5,8 +5,6 @@ import torch.nn.functional as F
 from torch import nn
 from torch.autograd import Variable
 
-from ..base_model_class import BaseModelClass
-
 
 def edge2node(x, rel_rec):
     """This function makes the aggregation over the incomming edge embeddings"""
@@ -34,15 +32,15 @@ def encode_onehot(labels):
 
 def adj_to_rel_type(rel_rec, rel_send, adj):
     """Go from a (sender, receiver) ordered adj matrix to rel_type
-        for a MPNN model    
+        for a MPNN model
 
     Args:
         rel_rec (torch.Tensor [N(N-1), N]): tensor w. one-hot-encoded idx of receiver pr edge
         rel_send (torch.Tensor [N(N-1), N]): tensor w. one-hot-encoded idx of receiver pr edge
-        adj (torch.Tensor [N, N]): (sender, receiver) ordered adj matrix) 
+        adj (torch.Tensor [N, N]): (sender, receiver) ordered adj matrix)
 
     Returns:
-        torch.Tensor [N(N-1)]: or of rel types 
+        torch.Tensor [N(N-1)]: or of rel types
     """
 
     rel_type = torch.zeros(rel_rec.shape[0])
@@ -59,7 +57,7 @@ class MPNN(nn.Module):
     def __init__(self, adj_mx, n_in, msg_hid, msg_out, n_hid, n_out, dropout_prob):
         super().__init__()
 
-        self.edge_types = 2 
+        self.edge_types = 2
         self.dropout_prob = dropout_prob
         # FC layers to compute messages
         self.msg_fc1 = nn.ModuleList(
@@ -76,17 +74,17 @@ class MPNN(nn.Module):
 
         self.msg_out_shape = msg_out
 
-        
         n_nodes = adj_mx.shape[0]
         off_diag = np.ones([n_nodes, n_nodes]) - np.eye(n_nodes)
         rel_rec = torch.Tensor(encode_onehot(np.where(off_diag)[0]))
-        rel_send = torch.Tensor(encode_onehot(np.where(off_diag)[1])) # TODO double check how the order of the ADJ should be
-        self.register_buffer('rel_rec', rel_rec)
-        self.register_buffer('rel_send', rel_send)
+        rel_send = torch.Tensor(
+            encode_onehot(np.where(off_diag)[1])
+        )  # TODO double check how the order of the ADJ should be
+        self.register_buffer("rel_rec", rel_rec)
+        self.register_buffer("rel_send", rel_send)
 
         rel_types = adj_to_rel_type(rel_rec=rel_rec, rel_send=rel_send, adj=adj_mx)
-        self.register_buffer('rel_types', rel_types)
-
+        self.register_buffer("rel_types", rel_types)
 
     def forward(self, x):
         # input shape [batch_size, num_atoms, num_dims]
@@ -94,20 +92,17 @@ class MPNN(nn.Module):
         # Since we do a simplified version timesteps here are considered dims so permute to get [B, N, T/F]
         batch_size = x.shape[0]
         n_nodes = x.shape[1]
-        n_features = x.shape[2]
+        # n_features = x.shape[2]
 
         x = x.reshape(batch_size, n_nodes, -1)
 
         pre_msg = node2edge(x, self.rel_rec, self.rel_send)
 
         # Create variable to aggregate the messages in
-        all_msgs = Variable(
-            torch.zeros(pre_msg.size(0), pre_msg.size(1), self.msg_out_shape, device=x.device)
-        )
+        all_msgs = Variable(torch.zeros(pre_msg.size(0), pre_msg.size(1), self.msg_out_shape, device=x.device))
 
         # Go over the different edge types and compute their contribution to the overall messages
-        rel_types = self.rel_types.unsqueeze(0).expand(batch_size, -1).unsqueeze(-1)        
-
+        rel_types = self.rel_types.unsqueeze(0).expand(batch_size, -1).unsqueeze(-1)
 
         for i in range(1, self.edge_types):
             msg = F.relu(self.msg_fc1[i](pre_msg))
@@ -140,19 +135,13 @@ class GRUDecoder(nn.Module):
 
         # FC layers to compute messages
         self.msg_fc1 = nn.ModuleList(
-            [
-                nn.Linear(in_features=gru_hid * 2, out_features=msg_hid)
-                for _ in range(self.edge_types)
-            ]
+            [nn.Linear(in_features=gru_hid * 2, out_features=msg_hid) for _ in range(self.edge_types)]
         )
         self.msg_fc2 = nn.ModuleList(
-            [
-                nn.Linear(in_features=msg_hid, out_features=msg_hid)
-                for _ in range(self.edge_types)
-            ]
+            [nn.Linear(in_features=msg_hid, out_features=msg_hid) for _ in range(self.edge_types)]
         )
 
-        self.msg_out_shape = msg_hid  
+        self.msg_out_shape = msg_hid
 
         # GRU network
         self.gru_hr = nn.Linear(in_features=msg_hid, out_features=gru_hid, bias=False)
@@ -179,9 +168,7 @@ class GRUDecoder(nn.Module):
         pre_msg = node2edge(hidden, rel_rec, rel_send)
 
         # Create variable to aggregate the messages in
-        all_msgs = Variable(
-            torch.zeros(pre_msg.size(0), pre_msg.size(1), self.msg_out_shape, device=inputs.device)
-        )
+        all_msgs = Variable(torch.zeros(pre_msg.size(0), pre_msg.size(1), self.msg_out_shape, device=inputs.device))
 
         # Go over the different edge types and compute their contribution to the overall messages
         for i in range(1, self.edge_types):
@@ -227,9 +214,7 @@ class GRUDecoder(nn.Module):
 
         pred_all = []
 
-        hidden = Variable(
-            torch.zeros(inputs.size(0), inputs.size(2), self.gru_hid, device=inputs.device)
-        )
+        hidden = Variable(torch.zeros(inputs.size(0), inputs.size(2), self.gru_hid, device=inputs.device))
 
         for step in range(0, inputs.shape[1] - 1):
             if burn_in:
@@ -244,4 +229,3 @@ class GRUDecoder(nn.Module):
         preds = torch.stack(pred_all, dim=1)
 
         return preds
-

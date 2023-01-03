@@ -1,5 +1,11 @@
 {
     "python.analysis.typeCheckingMode": "off",
     "python.linting.flake8Enabled": true,
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "editor.formatOnSave": true,
+    "python.formatting.provider": "black",
+    "python.formatting.blackPath": "/home/manity/Quick_adap/env_quick/bin/black",
+    "python.formatting.blackArgs": [
+        "-l 120"
+    ]
 }

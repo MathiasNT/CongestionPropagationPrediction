@@ -1,13 +1,14 @@
-def flatten(l):
+def flatten(input_l):
     """flattens a list of lists of varying lengths
 
     Args:
-        l (list): list of lists of varying lengths
+        input_l (list): list of lists of varying lengths
 
     Returns:
         list: flattened list w. same contents as l
     """
-    return [item for sublist in l for item in sublist]
+    return [item for sublist in input_l for item in sublist]
+
 
 def get_upstream_edges(edge_obj, n_up):
     """Creates a dict of upstream edges.
@@ -25,9 +26,9 @@ def get_upstream_edges(edge_obj, n_up):
     for i in range(0, n_up):
         next_edges = []
         for edge in upstream_edges[i]:
-            next_edges += (list(edge.getIncoming().keys()))
-        upstream_edges[i+1] = next_edges
-        
+            next_edges += list(edge.getIncoming().keys())
+        upstream_edges[i + 1] = next_edges
+
     upstream_edges_ids = {}
     for i in range(0, n_up + 1):
         level_ids = []
@@ -35,7 +36,8 @@ def get_upstream_edges(edge_obj, n_up):
             level_ids += [edge.getID()]
         upstream_edges_ids[i] = level_ids
 
-    return upstream_edges_ids 
+    return upstream_edges_ids
+
 
 def get_downstream_edges(edge_obj, n_down):
     """Creates a dict of downstream edges.
@@ -53,16 +55,17 @@ def get_downstream_edges(edge_obj, n_down):
     for i in range(0, n_down):
         next_edges = []
         for edge in downstream_edges[i]:
-            next_edges += (list(edge.getOutgoing().keys()))
-        downstream_edges[i+1] = next_edges
-        
+            next_edges += list(edge.getOutgoing().keys())
+        downstream_edges[i + 1] = next_edges
+
     downstream_edges_ids = {}
     for i in range(0, n_down + 1):
         level_ids = []
         for edge in downstream_edges[i]:
             level_ids += [edge.getID()]
         downstream_edges_ids[i] = level_ids
-    return downstream_edges_ids        
+    return downstream_edges_ids
+
 
 def get_edge_to_level_dict_string(upstream_edges_ids, downstream_edges_ids, incident_edge):
     """Creates a dict that goes from edge to level information string.
@@ -70,7 +73,7 @@ def get_edge_to_level_dict_string(upstream_edges_ids, downstream_edges_ids, inci
     Args:
         upstream_edges_ids (dict): upstream level dict
         downstream_edges_ids (dict): downstream level dict
-        incident_edge (str): id of the incident edge 
+        incident_edge (str): id of the incident edge
 
     Returns:
         dict: dict w. edge ids as keys and corresponding str w. upstream or downstream level as value
@@ -78,16 +81,17 @@ def get_edge_to_level_dict_string(upstream_edges_ids, downstream_edges_ids, inci
     edge_to_level_dict = {}
     for level in upstream_edges_ids.keys():
         for i, edge in enumerate(upstream_edges_ids[level]):
-            edge_to_level_dict[edge] = f'upstream_{level}_{i}'
+            edge_to_level_dict[edge] = f"upstream_{level}_{i}"
 
     for level in downstream_edges_ids.keys():
         for i, edge in enumerate(downstream_edges_ids[level]):
-            edge_to_level_dict[edge] = f'downstream_{level}_{i}'
+            edge_to_level_dict[edge] = f"downstream_{level}_{i}"
 
-    edge_to_level_dict[incident_edge] = 'incident_edge'
+    edge_to_level_dict[incident_edge] = "incident_edge"
 
     return edge_to_level_dict
-     
+
+
 def get_edge_to_level_dict_numerical(upstream_edges_ids, downstream_edges_ids, incident_edge):
     """Creates a dict that goes from edge to level information in numerical format.
         Positive means downstream, negative means upstream
@@ -96,7 +100,7 @@ def get_edge_to_level_dict_numerical(upstream_edges_ids, downstream_edges_ids, i
     Args:
         upstream_edges_ids (dict): upstream level dict
         downstream_edges_ids (dict): downstream level dict
-        incident_edge (str): id of the incident edge 
+        incident_edge (str): id of the incident edge
 
     Returns:
         dict: dict w. edge ids as keys and corresponding numerical upstream or downstream level as value
@@ -108,18 +112,19 @@ def get_edge_to_level_dict_numerical(upstream_edges_ids, downstream_edges_ids, i
 
     for level in downstream_edges_ids.keys():
         for edge in downstream_edges_ids[level]:
-            edge_to_level_dict[edge] = (level + 1)
+            edge_to_level_dict[edge] = level + 1
 
     edge_to_level_dict[incident_edge] = 0
 
     return edge_to_level_dict
-    
+
+
 def get_up_and_down_stream(i_edge_obj, n_up, n_down):
     """Function to get the upstream edges, downstream edges and edge_level_dict of the given incident.
 
     Args:
         i_edge_obj sumolib.edge.Edge: sumolib Edge object of the incident edge
-        n_up (int): How many levels of upstream to do 
+        n_up (int): How many levels of upstream to do
         n_down (int): How many levels of downstream to do
 
     Returns:
@@ -134,7 +139,6 @@ def get_up_and_down_stream(i_edge_obj, n_up, n_down):
 
     upstream_edges_ids = get_upstream_edges(i_edge_obj, n_down)
     all_upstream_edges_ids = flatten(list(upstream_edges_ids.values()))
-
 
     edge_to_level_dict = get_edge_to_level_dict_numerical(upstream_edges_ids, downstream_edges_ids, incident_edge)
 

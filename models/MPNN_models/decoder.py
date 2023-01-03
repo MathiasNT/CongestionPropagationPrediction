@@ -65,9 +65,7 @@ class GRUDecoder(nn.Module):
         pre_msg = self.node2edge(hidden, rel_rec, rel_send)
 
         # Create variable to aggregate the messages in
-        all_msgs = Variable(
-            torch.zeros(pre_msg.size(0), pre_msg.size(1), self.msg_out_shape, device=inputs.device)
-        )
+        all_msgs = Variable(torch.zeros(pre_msg.size(0), pre_msg.size(1), self.msg_out_shape, device=inputs.device))
 
         if self.skip_first:
             start_idx = 1
@@ -113,12 +111,10 @@ class GRUDecoder(nn.Module):
         burn_in_steps,
     ):
         # Inputs should be [B, T, N, F]
-        inputs = inputs.permute(0,2,1,3)
+        inputs = inputs.permute(0, 2, 1, 3)
         pred_all = []
 
-        hidden = Variable(
-            torch.zeros(inputs.size(0), inputs.size(2), self.gru_hid, device=inputs.device)
-        )
+        hidden = Variable(torch.zeros(inputs.size(0), inputs.size(2), self.gru_hid, device=inputs.device))
 
         for step in range(0, inputs.shape[1] - 1):
             if burn_in:
@@ -133,4 +129,3 @@ class GRUDecoder(nn.Module):
         preds = torch.stack(pred_all, dim=1)
 
         return preds, hidden
-

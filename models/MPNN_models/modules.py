@@ -88,9 +88,7 @@ class MPNN(nn.Module):
         pre_msg = self.node2edge(inputs, rel_rec, rel_send)
 
         # Create variable to aggregate the messages in
-        all_msgs = Variable(
-            torch.zeros(pre_msg.size(0), pre_msg.size(1), self.msg_out_shape, device=inputs.device)
-        )
+        all_msgs = Variable(torch.zeros(pre_msg.size(0), pre_msg.size(1), self.msg_out_shape, device=inputs.device))
 
         # Go over the different edge types and compute their contribution to the overall messages
         for i in range(0, self.n_edge_types):
@@ -107,9 +105,7 @@ class MPNN(nn.Module):
         aug_msgs = torch.cat([inputs, agg_msgs], dim=-1)
 
         # Output MLP
-        output = F.dropout(
-            F.relu(self.out_fc1(aug_msgs)), p=self.dropout_prob, training=self.training
-        )
+        output = F.dropout(F.relu(self.out_fc1(aug_msgs)), p=self.dropout_prob, training=self.training)
         output = F.dropout(F.relu(self.out_fc2(output)), p=self.dropout_prob, training=self.training)
         output = self.out_fc3(output)
 
