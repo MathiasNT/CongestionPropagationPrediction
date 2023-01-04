@@ -6,13 +6,13 @@ transform: scalenormalize
 transform_network_info: True
 num_nodes : 215
 spatial_test: False
-subset_size: 75
+subset_size: 300
 min_impact_threshold: 
 limited_network_info: False
 
 # Logger setttings
 wandb_project: dataset_size_exp_rw
-wandb_name: nri_75
+wandb_name: nri_300
 debug: False
 
 # Training settings
@@ -28,7 +28,7 @@ dropout: 0.5
 random_seed: 41 
 lightning_precision: 16
 
-results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/subset_exp_rw/nri_75
+results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/subset_exp_rw/nri_300
 
 # Model settings
 model: nri

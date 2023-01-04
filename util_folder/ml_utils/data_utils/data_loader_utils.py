@@ -207,15 +207,16 @@ class IncidentDataModule(pl.LightningDataModule):
 
         n_obs_full = len(input_full)
 
-        if self.subset_size is not None:
-            input_full = input_full[: self.subset_size]
-            input_obs_full = input_obs_full[: self.subset_size]
-            input_time_full = input_time_full[: self.subset_size]
-            target_full = target_full[: self.subset_size]
-            incident_info_full = incident_info_full[: self.subset_size]
-            network_info_full = network_info_full[: self.subset_size]
-            n_obs_full = len(input_full)
+        #  if self.subset_size is not None:
+        #  input_full = input_full[: self.subset_size]
+        #  input_obs_full = input_obs_full[: self.subset_size]
+        #  input_time_full = input_time_full[: self.subset_size]
+        #  target_full = target_full[: self.subset_size]
+        #  incident_info_full = incident_info_full[: self.subset_size]
+        #  network_info_full = network_info_full[: self.subset_size]
+        #  n_obs_full = len(input_full)
 
+        # TODO check if this can be removed
         if self.min_impact_threshold is not None:
             threshold_mask = target_full[..., 0].sum(1) >= self.min_impact_threshold
             input_full = input_full[threshold_mask]
@@ -241,9 +242,14 @@ class IncidentDataModule(pl.LightningDataModule):
             range(n_obs_full), [train_len, test_val_len, test_val_len], generator=torch.Generator().manual_seed(1)
         )
 
+        # Subset the training set for experiments on effect of smaller data amounts
+        if self.subset_size is not None:
+            train_set.indices = train_set.indices[: self.subset_size]
+
         if self.spatial_test:
             self.test_edge_idxs = torch.tensor([80, 81, 79, 53, 59, 64, 128, 15, 14, 100, 102, 101, 82, 83, 84, 85])
-            #  ['4414080#0.187', '4414080#0.756', '4414080#0', '332655581', '360361373-AddedOffRampEdge', '360361373.2643' ]
+            #  ['4414080#0.187', '4414080#0.756', '4414080#0', '332655581',
+            # '360361373-AddedOffRampEdge', '360361373.2643' ]
             spatial_test_mask = sum(incident_info_full[..., 0] == edge_idx for edge_idx in self.test_edge_idxs)
             spatial_test_obs_idxs = torch.where(spatial_test_mask == 1)[0]
 
@@ -251,6 +257,11 @@ class IncidentDataModule(pl.LightningDataModule):
             val_set.indices = [x for x in val_set.indices if x not in spatial_test_obs_idxs]
             test_set.indices = [x for x in test_set.indices if x not in spatial_test_obs_idxs]
             test_set.indices += spatial_test_obs_idxs
+
+        if self.verbose:
+            print(f"train size {len(train_set)}")
+            print(f"val size {len(val_set)}")
+            print(f"test size {len(test_set)}")
 
         # Normalize the data
         padded_lane_mask = torch.BoolTensor(network_info_full[:, :, 7:] == 0)
@@ -388,13 +399,13 @@ class RWIncidentDataModule(IncidentDataModule):
             torch.load(f"{self.folder_path}/network_info.pt").unsqueeze(-1).type(torch.get_default_dtype())
         )
 
-        if self.subset_size is not None:
-            input_obs_full = input_obs_full[: self.subset_size]
-            input_time_full = input_time_full[: self.subset_size]
-            target_full = target_full[: self.subset_size]
-            incident_info_full = incident_info_full[: self.subset_size]
-            network_info_full = network_info_full[: self.subset_size]
-            n_obs_full = len(input_obs_full)
+        # if self.subset_size is not None:
+        # input_obs_full = input_obs_full[: self.subset_size]
+        # input_time_full = input_time_full[: self.subset_size]
+        # target_full = target_full[: self.subset_size]
+        # incident_info_full = incident_info_full[: self.subset_size]
+        # network_info_full = network_info_full[: self.subset_size]
+        # n_obs_full = len(input_obs_full)
 
         if self.min_impact_threshold is not None:
             threshold_mask = target_full[..., 0].sum(1) >= self.min_impact_threshold
@@ -424,8 +435,17 @@ class RWIncidentDataModule(IncidentDataModule):
             range(n_obs_full), [train_len, test_val_len, test_val_len], generator=torch.Generator().manual_seed(1)
         )
 
+        # Subset the training set for experiments on effect of smaller data amounts
+        if self.subset_size is not None:
+            train_set.indices = train_set.indices[: self.subset_size]
+
         if self.spatial_test:
             raise Exception("Spatial subset for RW data not implemented")
+
+        if self.verbose:
+            print(f"train size {len(train_set)}")
+            print(f"val size {len(val_set)}")
+            print(f"test size {len(test_set)}")
 
         padded_lane_mask = torch.zeros(n_obs_full, n_nodes, 1).bool()
         unused_lane_mask = torch.zeros(n_obs_full, n_nodes, 1).bool()

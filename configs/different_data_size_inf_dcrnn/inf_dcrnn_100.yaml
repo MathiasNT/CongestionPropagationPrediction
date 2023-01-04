@@ -50,4 +50,5 @@ num_layers: 1
 activation: linear
 rnn_hidden_size: 128 
 
+
 AD_path: /home/manity/Quick_adap/quick_adap_to_incidents/Simulation_scenarios/motorway/Results/incident_large/weighted_AD_matrix.npy
