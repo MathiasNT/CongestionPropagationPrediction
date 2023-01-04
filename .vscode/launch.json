@@ -93,11 +93,11 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/different_data_size_inf_dcrnn/inf_dcrnn_400.yaml",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/different_data_size_nri_rw/nri_75.yaml",
                 "--overwrite_random_seed",
                 "1",
                 "--overwrite_gpu",
-                "0"
+                "1"
             ]
         },
         {
@@ -109,7 +109,7 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/pems_uninformed_spatial_comp/uninformed_nri_dev.yaml",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/different_data_size_nri/nri_100.yaml",
                 "--overwrite_random_seed",
                 "1",
                 "--overwrite_gpu",

@@ -1,17 +1,18 @@
 # Data settings
-scenario: motorway
-simulation_name: incident_large
+scenario: pems
+simulation_name: pems_data
 form: graph # incident_only, independent, graph
 transform: scalenormalize
 transform_network_info: True
-num_nodes : 147
+num_nodes : 215
 spatial_test: False
-subset_size: 5400 
+subset_size: 75
 min_impact_threshold: 
+limited_network_info: False
 
 # Logger setttings
-wandb_project: dataset_size_exp
-wandb_name: nri_5400
+wandb_project: dataset_size_exp_rw
+wandb_name: nri_75
 debug: False
 
 # Training settings
@@ -27,7 +28,7 @@ dropout: 0.5
 random_seed: 41 
 lightning_precision: 16
 
-results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/subset_exp/nri_5400
+results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/subset_exp_rw/nri_75
 
 # Model settings
 model: nri

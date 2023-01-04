@@ -27,7 +27,7 @@ dropout: 0.5
 random_seed: 42 
 lightning_precision: 32
 
-results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/spatial_comp/inf_dcrnn
+results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/subset_exp/inf_dcrnn_200
 
 # Model settings
 model: informed_gnn_v3

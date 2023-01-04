@@ -1,43 +1,43 @@
 # Data settings
-scenario: motorway
-simulation_name: incident_large
+scenario: pems
+simulation_name: pems_data
 form: graph # incident_only, independent, graph
 transform: scalenormalize
 transform_network_info: True
-num_nodes : 147
+num_nodes : 215
 spatial_test: False
-subset_size: 400 
+subset_size: 300
 min_impact_threshold: 
+limited_network_info: False
 
 # Logger setttings
-wandb_project: dataset_size_exp
-wandb_name: inf_dcrnn_400
+wandb_project: dataset_size_exp_rw
+wandb_name: inf_dcrnn_300
 debug: False
 
 # Training settings
 gpu: 1
-epochs: 300
-batch_size: 500
+epochs: 600
+batch_size: 400
 infer_lr: False
 learning_rate: 0.0003
-loss_type: upstream_focal_loss
+loss_type: focal_loss
 full_loss: True
-bce_pos_weight: 12 # Somewhat around half  #25.28 # full: 25.5191, ie: 02502
+bce_pos_weight: 16 # Somewhat around half  #25.28 # full: 25.5191, ie: 02502
 dropout: 0.5
 random_seed: 42 
 lightning_precision: 32
 
-results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/subset_exp/inf_dcrnn_400
+results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/subset_exp_rw/inf_dcrnn_300
 
 # Model settings
 model: informed_gnn_v3
-timeseries_in_size: 20 
-n_timesteps: 10
+timeseries_in_size: 7
+n_timesteps: 12
 fc_hidden_size: 64
 info_in_size: 3
-network_in_size: 13
+network_in_size: 1
 out_size: 4
-limited_network_info: False
 
 # Rose settings
 max_diffusion_step: 1
@@ -50,5 +50,4 @@ num_layers: 1
 activation: linear
 rnn_hidden_size: 128 
 
-
-AD_path: /home/manity/Quick_adap/quick_adap_to_incidents/Simulation_scenarios/motorway/Results/incident_large/weighted_AD_matrix.npy
+AD_path: /home/manity/Quick_adap/quick_adap_to_incidents/pems_data/PEMS_d7_adj.npy
