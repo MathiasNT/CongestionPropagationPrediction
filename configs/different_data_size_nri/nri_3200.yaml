@@ -37,7 +37,7 @@ fc_hidden_size: 64
 network_in_size: 13
 info_in_size: 3
 n_timesteps: 10
-rimited_network_info: False
+limited_network_info: False
 
 
 # NRI specific settings

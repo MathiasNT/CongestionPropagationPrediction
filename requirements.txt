@@ -1,6 +1,12 @@
-libsumo==1.14.1
+libsumo==1.15.0
 lxml==4.9.1
+matplotlib==3.5.2
 numpy==1.23.1
+pandas==1.5.1
+pytorch_lightning==1.7.4
+PyYAML==6.0
+scipy==1.9.1
 sumolib==1.14.1
+torch==1.12.1+cu113
+torchmetrics==0.10.0
 traci==1.14.1
-utils==1.0.1
