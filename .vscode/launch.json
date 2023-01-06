@@ -93,11 +93,11 @@
             "justMyCode": true,
             "args": [
                 "--config_path",
-                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/different_data_size_nri_rw/nri_75.yaml",
+                "/home/manity/Quick_adap/quick_adap_to_incidents/configs/debug_configs/debug_config.yaml",
                 "--overwrite_random_seed",
                 "1",
                 "--overwrite_gpu",
-                "1"
+                "0"
             ]
         },
         {
