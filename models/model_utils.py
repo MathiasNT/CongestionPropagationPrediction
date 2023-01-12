@@ -121,7 +121,7 @@ def init_model(config, pos_weights):
             adj_mx=adj_mx, config=config, learning_rate=config["learning_rate"], pos_weights=pos_weights
         )
 
-    elif config["model"] == "nri":
+    elif config["model"] == "inf_nri":
         model = NRI_v1(config=config, learning_rate=config["learning_rate"], pos_weights=pos_weights)
 
     elif config["model"] == "uninformed_nri":  # TODO fix this such that it is nri and informed nri

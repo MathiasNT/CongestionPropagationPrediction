@@ -1,1 +1,1 @@
-python model_train.py --config_path configs/different_data_size_nri_rw/nri_75.yaml configs/different_data_size_nri_rw/nri_150.yaml configs/different_data_size_nri_rw/nri_300.yaml configs/different_data_size_nri_rw/nri_600.yaml--overwrite_gpu 1 --overwrite_random_seed 41 42 43 44
+python model_train.py --config_path configs/different_data_size_nri_rw/nri_75.yaml configs/different_data_size_nri_rw/nri_150.yaml configs/different_data_size_nri_rw/nri_300.yaml configs/different_data_size_nri_rw/nri_600.yaml --overwrite_gpu 1 --overwrite_random_seed 44

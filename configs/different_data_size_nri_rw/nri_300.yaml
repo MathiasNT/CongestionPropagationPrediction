@@ -31,7 +31,7 @@ lightning_precision: 16
 results_dir: /home/manity/Quick_adap/quick_adap_to_incidents/saved_models/subset_exp_rw/nri_300
 
 # Model settings
-model: nri
+model: inf_nri
 timeseries_in_size: 7
 rnn_hidden_size: 64
 fc_hidden_size: 64

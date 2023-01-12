@@ -42,6 +42,7 @@ def run_config(config, overwrite_random_seed, overwrite_gpu):
             spatial_test=config["spatial_test"],
             subset_size=config["subset_size"],
             min_impact_threshold=config["min_impact_threshold"],
+            sliding_steps=config["sliding_window_steps"],
         )
 
     incident_data_module.setup()

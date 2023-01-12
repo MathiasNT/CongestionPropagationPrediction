@@ -4,6 +4,27 @@ import pytorch_lightning as pl
 import numpy as np
 
 
+class NonTransform:
+    """A class that applies no transform. mainly used for debugging purposes."""
+
+    def __call__(
+        self,
+        input_obs_full,
+        target_full,
+        incident_info_full,
+        network_info_full,
+        train_set,
+        padded_lane_mask,
+        unused_lane_mask,
+    ):
+        standardized_input_obs = input_obs_full
+
+        # apply mask
+        standardized_input_obs[padded_lane_mask] = -1
+
+        return standardized_input_obs, target_full, incident_info_full, network_info_full
+
+
 class Standardize:
     """Note that the Standardize only standardizes the time series input"""
 
@@ -144,7 +165,6 @@ class IncidentDataSet(Dataset):
         }
 
 
-# TODO clean up the code for the trig time features. They can be split out earlier
 class IncidentDataModule(pl.LightningDataModule):
     """pl DataModule that creates and keeps track of the IncidentDataSet and DataLoaders
 
@@ -174,6 +194,8 @@ class IncidentDataModule(pl.LightningDataModule):
         train_frac=0.6,
         batch_size=32,
         subset_size=None,
+        sliding_steps=0,
+        input_time_steps=10,
         min_impact_threshold=None,
         verbose=True,
     ):
@@ -184,10 +206,15 @@ class IncidentDataModule(pl.LightningDataModule):
         self.subset_size = subset_size
         self.min_impact_threshold = min_impact_threshold
 
+        self.input_start_time = 0 + sliding_steps
+        self.input_end_time = input_time_steps + sliding_steps
+
         if transform == "standardize":
             self.transform = Standardize()
         elif transform == "scalenormalize":
             self.transform = ScaleNormalize()
+        elif transform == "none":
+            self.transform = NonTransform()
 
         self.spatial_test = spatial_test
 
@@ -198,7 +225,10 @@ class IncidentDataModule(pl.LightningDataModule):
         return
 
     def setup(self, stage=None):
-        input_full = torch.Tensor(np.load(f"{self.folder_path}/input_data.npy"))
+
+        input_full = torch.Tensor(np.load(f"{self.folder_path}/long_input_data.npy"))
+        # Apply any slides to input time window
+        input_full = input_full[:, :, :, self.input_start_time : self.input_end_time, :]
         input_obs_full = input_full[..., :-2]
         input_time_full = input_full[..., -2:]
         target_full = torch.Tensor(np.load(f"{self.folder_path}/target_data.npy"))
@@ -206,15 +236,6 @@ class IncidentDataModule(pl.LightningDataModule):
         network_info_full = torch.Tensor(np.load(f"{self.folder_path}/network_info.npy"))
 
         n_obs_full = len(input_full)
-
-        #  if self.subset_size is not None:
-        #  input_full = input_full[: self.subset_size]
-        #  input_obs_full = input_obs_full[: self.subset_size]
-        #  input_time_full = input_time_full[: self.subset_size]
-        #  target_full = target_full[: self.subset_size]
-        #  incident_info_full = incident_info_full[: self.subset_size]
-        #  network_info_full = network_info_full[: self.subset_size]
-        #  n_obs_full = len(input_full)
 
         # TODO check if this can be removed
         if self.min_impact_threshold is not None:
@@ -229,7 +250,7 @@ class IncidentDataModule(pl.LightningDataModule):
 
         if self.verbose:
             print("*** DATA SUMMARY: ***")
-            print(f"{input_obs_full.shape=}")
+            print(f"{input_obs_full.shape=} from {self.input_start_time} to {self.input_end_time}")
             print(f"{input_time_full.shape=}")
             print(f"{target_full.shape=}")
             print(f"{incident_info_full.shape=}")
@@ -379,7 +400,16 @@ class RWIncidentDataModule(IncidentDataModule):
         verbose=True,
     ):
         super().__init__(
-            folder_path, transform, spatial_test, train_frac, batch_size, subset_size, min_impact_threshold, verbose
+            folder_path=folder_path,
+            transform=transform,
+            spatial_test=spatial_test,
+            train_frac=train_frac,
+            batch_size=batch_size,
+            subset_size=subset_size,
+            min_impact_threshold=min_impact_threshold,
+            verbose=verbose,
+            sliding_steps=0,
+            input_time_steps=12,
         )
 
     def setup(self, stage=None):

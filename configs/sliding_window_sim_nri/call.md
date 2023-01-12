@@ -1,0 +1,1 @@
+python model_train.py --config_path configs/sliding_window_sim_nri/nri_0.yaml configs/sliding_window_sim_nri/nri_1.yaml configs/sliding_window_sim_nri/nri_5.yaml configs/sliding_window_sim_nri/nri_10.yaml configs/sliding_window_sim_nri/nri_15.yaml configs/sliding_window_sim_nri/nri_30.yaml --overwrite_gpu 1 --overwrite_random_seed 41 42 43 44
